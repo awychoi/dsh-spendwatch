@@ -9,17 +9,17 @@ Spendwatch is an add-on for **DeepSeek Harness (DSH)**. Once installed, two smal
 
 Both move on their own while you work, so you can watch the wallet drain without keeping the DeepSeek platform open in another tab.
 
-![Illustration of the sidebar balance row and the composer session pill](docs/layout.svg)
+![Spendwatch highlighted in DeepSeek Harness: the Balance row in the sidebar and the session spend in the composer dock](docs/screenshot.png)
 
-*Illustration: the balance row at the bottom of the left sidebar, and the session pill in the dock under the composer.*
+*The two numbers Spendwatch adds, highlighted: your balance on the left, and this session’s spend on the right.*
 
 ## Where things are
 
 | Where | What you see | What it does when you touch it |
 |---|---|---|
-| Left sidebar, at the bottom (above **More**) | `Balance $10.96` | Hover for the all-time estimate and how many sessions it covers. Click to refresh now. |
+| Left sidebar, at the bottom (above **More**) | `Balance $10.64` | Hover for the all-time estimate and how many sessions it covers. Click to refresh now. |
 | Left sidebar collapsed to the 56 px rail | a wallet icon | Hover — the tooltip still carries the balance and the estimate. |
-| Under the message box, beside the context meter | `~$1.28 this session` | Hover for the split: the conversation's own spend, and the subagents it spawned. |
+| Under the message box, beside the context meter | `~$0.37 this session` | Hover for the split: the conversation's own spend, and the subagents it spawned. |
 
 That's the whole plugin. No extra panels, no settings screen, no separate login.
 
