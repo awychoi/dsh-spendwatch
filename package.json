@@ -1,0 +1,52 @@
+{
+  "name": "dsh-spendwatch",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Spendwatch — live DeepSeek balance and conversation spend for DeepSeek Harness",
+  "author": "awychoi",
+  "license": "PolyForm-Noncommercial-1.0.0",
+  "homepage": "https://github.com/awychoi/dsh-spendwatch#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/awychoi/dsh-spendwatch.git"
+  },
+  "keywords": [
+    "deepseek",
+    "deepseek-harness",
+    "dsh",
+    "dsh-plugin",
+    "balance",
+    "spend",
+    "cost",
+    "wallet"
+  ],
+  "exports": {
+    ".": "./index.js",
+    "./client": "./client.js",
+    "./locale/*.json": "./locale/*.json",
+    "./icon": "./icon.svg"
+  },
+  "files": [
+    "index.js",
+    "client.js",
+    "cordis.patch.yml",
+    "locale/*.json",
+    "icon.svg",
+    "README.md",
+    "LICENSE"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "immediately": true,
+      "inject": [
+        "@deepseek-ai/dsh-client-ui-conversation",
+        "@deepseek-ai/dsh-client-ui-sidebar"
+      ]
+    }
+  }
+}

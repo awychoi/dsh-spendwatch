@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Spendwatch",
+    "description": "在左侧边栏实时显示 DeepSeek 余额，在输入框下方显示本次会话预估花费。"
+  }
+}
