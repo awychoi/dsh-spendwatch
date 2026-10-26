@@ -11,13 +11,13 @@ Both move on their own while you work, so you can watch the wallet drain without
 
 ![Illustration of the sidebar balance row and the composer session pill](docs/layout.svg)
 
-*Illustration of where the two pieces sit.*
+*Illustration: the balance row at the bottom of the left sidebar, and the session pill in the dock under the composer.*
 
 ## Where things are
 
 | Where | What you see | What it does when you touch it |
 |---|---|---|
-| Left sidebar, just above **Settings** | `Balance $10.96` | Hover for the all-time estimate and how many sessions it covers. Click to refresh now. |
+| Left sidebar, at the bottom (above **More**) | `Balance $10.96` | Hover for the all-time estimate and how many sessions it covers. Click to refresh now. |
 | Left sidebar collapsed to the 56 px rail | a wallet icon | Hover — the tooltip still carries the balance and the estimate. |
 | Under the message box, beside the context meter | `~$1.28 this session` | Hover for the split: the conversation's own spend, and the subagents it spawned. |
 
