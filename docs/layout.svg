@@ -70,11 +70,11 @@
     <text x="42" y="296" font-size="12" fill="#b9bdc2">dsh-extensions</text>
     <text x="42" y="324" font-size="12" fill="#e6e8eb">spendwatch</text>
     <text x="42" y="352" font-size="12" fill="#b9bdc2">notes</text>
-    <text x="64" y="380" font-size="12" fill="#b9bdc2">review</text>
-    <text x="42" y="408" font-size="12" fill="#b9bdc2">more UI refinement</text>
-    <text x="42" y="436" font-size="12" fill="#b9bdc2">ui refinement</text>
-    <text x="42" y="464" font-size="12" fill="#b9bdc2">enable live connection</text>
-    <text x="42" y="492" font-size="12" fill="#b9bdc2">branding</text>
+    <text x="64" y="380" font-size="12" fill="#b9bdc2">research</text>
+    <text x="42" y="408" font-size="12" fill="#b9bdc2">docs pass</text>
+    <text x="42" y="436" font-size="12" fill="#b9bdc2">copy edits</text>
+    <text x="42" y="464" font-size="12" fill="#b9bdc2">integration</text>
+    <text x="42" y="492" font-size="12" fill="#b9bdc2">release prep</text>
     <text x="42" y="548" font-size="12" fill="#b9bdc2">Default workspace</text>
     <text x="18" y="520" font-size="10.5" fill="#7d8188">Show 8 more sessions</text>
     <text x="224" y="324" font-size="10.5" text-anchor="end" fill="#6f737a">8min</text>
@@ -170,8 +170,8 @@
         <ellipse cx="548" cy="648" rx="6" ry="2.4"/>
         <path d="M542 648v6c0 1.3 2.7 2.4 6 2.4s6-1.1 6-2.4v-6"/>
       </g>
-      <text x="342" y="656">11 turns 192 steps · 199 tok/s</text>
-      <text x="564" y="656">30.5M tok · Cache hit 99.6%</text>
+      <text x="342" y="656">6 turns 84 steps · 120 tok/s</text>
+      <text x="564" y="656">12.4M tok · Cache hit 98.2%</text>
     </g>
     <g transform="translate(790,648)" fill="none" stroke="#9aa0a8" stroke-width="1.2">
       <path d="M2.5 5.25c0-.97.78-1.75 1.75-1.75H12c.97 0 1.75.78 1.75 1.75v6.5c0 .97-.78 1.75-1.75 1.75H4.25c-.97 0-1.75-.78-1.75-1.75v-6.5Z"/>
@@ -182,6 +182,6 @@
     <text x="808" y="656" font-size="11.5" fill="#a9adb4">~$1.28 this session</text>
     <circle cx="968" cy="652" r="7" fill="none" stroke="#34373c" stroke-width="2.4"/>
     <path d="M968 645a7 7 0 0 1 6.1 3.6" fill="none" stroke="#6ea8fe" stroke-width="2.4" stroke-linecap="round"/>
-    <text x="982" y="656" font-size="11" fill="#7c8087">30%</text>
+    <text x="982" y="656" font-size="11" fill="#7c8087">18%</text>
   </g>
 </svg>
