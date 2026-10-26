@@ -18,6 +18,7 @@ Both move on their own while you work, so you can watch the wallet drain without
 | Where | What you see | What it does when you touch it |
 |---|---|---|
 | Left sidebar, at the bottom (above **More**) | `Balance $10.64` | Hover for the all-time estimate and how many sessions it covers. Click to refresh now. |
+| Under the balance | `● Off-peak · ends in 2h 22m` | DeepSeek's current pricing window, with a live countdown to the next flip. Hover for the flip time in your local clock. |
 | Left sidebar collapsed to the 56 px rail | a wallet icon | Hover — the tooltip still carries the balance and the estimate. |
 | Under the message box, beside the context meter | `~$0.37 this session` | Hover for the split: the conversation's own spend, and the subagents it spawned. |
 
@@ -28,12 +29,14 @@ That's the whole plugin. No extra panels, no settings screen, no separate login.
 - **The balance is re-read from DeepSeek** whenever a running conversation adds to its cost, when you come back to the window, and when you click the row. Nothing polls while you're idle.
 - **The session figure follows the tokens** each model call reports, so it moves as replies and tool calls land — including work done by subagents.
 - **A forked conversation** is billed only for what it did after the fork, not for the history it inherited.
+- **The pricing marker** follows DeepSeek's schedule — peak is 01:00–04:00 and 06:00–10:00 UTC, Monday to Friday — and re-evaluates every 10 seconds. It needs no network call.
 
 ## What the numbers are (and aren't)
 
 - The **balance** is the real wallet: whatever DeepSeek's API last told us.
 - The **spend** is an **estimate**: tokens × DeepSeek's published list prices, including peak/off-peak and cache-hit/miss rates. It is not a billing record.
 - Expect small differences. Unpriced models are skipped, public holidays aren't modelled, and DeepSeek's ledger can settle after the fact. **Don't reconcile an invoice with it.**
+- The peak/off-peak marker follows the plain weekday schedule; Chinese public holidays aren't modelled there either, so it can disagree with DeepSeek on those days.
 - Spendwatch is provided **as-is, without warranty** — it makes no promise of accuracy, completeness, or timeliness. Use it at your own risk.
 
 ## Install
@@ -79,6 +82,7 @@ Not affiliated with DeepSeek.
 **Client** ([`client.js`](client.js))
 
 - Registers `sidebar.footer.action` (root scope) and `conversation.composer.dock` (session scope) through DSH's slot API.
+- The sidebar computes the peak/off-peak marker locally from the same rule as the Host's `isPeak` (01:00–04:00 and 06:00–10:00 UTC, Mon–Fri), ticks every 10 s, and renders the next flip as a countdown plus a local clock time in the tooltip.
 - The sidebar sums every session's live `deepseekSpend` from the root `useSessions` snapshot. The client receives control frames for every session whether or not its conversation is open, so background sessions and subagents count. When the sum rises it pulls `/balance`: debounced 200 ms, single-flight, with one queued trailing pull.
 - The composer pill sums the current session's own view with every descendant marked `origin: "subagent"`, recursively. A subagent this app run has never loaded falls back to the `/summary` `bySession` fold.
 - The wallet row sits above the host's existing footer action via a scoped `:has()` wrap; the collapsed rail shows the icon only.

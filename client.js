@@ -7,14 +7,25 @@ window.__ModuleLoader__.load({
     const NS = 'spendwatch'
     const ROUTE_PATH = '/plugins/spendwatch/summary'
     const BALANCE_ROUTE_PATH = '/plugins/spendwatch/balance'
-    const CLIENT_VERSION = '1.0.0'
+    const CLIENT_VERSION = '1.1.0'
     /** Coalesce same-tick updates (one turn can commit several Sessions' frames together). */
     const PULL_DEBOUNCE_MS = 200
     /** Minimum gap before a queued follow-up pull, so one turn cannot stampede the wallet API. */
     const PULL_TRAIL_MS = 750
+    /** How often the peak/off-peak line re-evaluates. */
+    const MODE_TICK_MS = 10_000
 
     const en = {
       balance: 'Balance',
+      modePeak: 'Peak',
+      modeOffPeak: 'Off-peak',
+      modeEndsIn: 'ends in {duration}',
+      pricingLine: '{mode} pricing · ends in {duration} (at {time})',
+      durationDays: '{days}d',
+      durationDaysHours: '{days}d {hours}h',
+      durationHours: '{hours}h',
+      durationHoursMinutes: '{hours}h {minutes}m',
+      durationMinutes: '{minutes}m',
       sidebarTitle: 'DeepSeek balance: {balance}. All-time Harness estimate: {spent} across {sessions} sessions. Click to refresh.',
       sidebarTitleNoBalance: 'DeepSeek balance is unavailable. Check Account settings or your connection. All-time Harness estimate: {spent} across {sessions} sessions. Click to refresh.',
       sidebarTitleLoading: 'Loading DeepSeek balance and all-time Harness spend…',
@@ -33,6 +44,15 @@ window.__ModuleLoader__.load({
 
     const zh = {
       balance: '余额',
+      modePeak: '高峰',
+      modeOffPeak: '错峰',
+      modeEndsIn: '{duration}后结束',
+      pricingLine: '{mode}价 · {duration}后结束（{time}）',
+      durationDays: '{days}天',
+      durationDaysHours: '{days}天{hours}小时',
+      durationHours: '{hours}小时',
+      durationHoursMinutes: '{hours}小时{minutes}分',
+      durationMinutes: '{minutes}分',
       sidebarTitle: 'DeepSeek 余额：{balance}。Harness 历史预估：{spent}，共 {sessions} 个会话。点击刷新。',
       sidebarTitleNoBalance: 'DeepSeek 余额暂不可用。请检查账户设置或网络。Harness 历史预估：{spent}，共 {sessions} 个会话。点击刷新。',
       sidebarTitleLoading: '正在加载 DeepSeek 余额与历史预估…',
@@ -115,11 +135,52 @@ window.__ModuleLoader__.load({
         width: 16px;
         height: 16px;
       }
+      .spw-sidebar-main {
+        flex: 1 1 auto;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        gap: 1px;
+      }
+      .spw-sidebar-top {
+        display: flex;
+        align-items: baseline;
+        gap: 8px;
+        min-width: 0;
+      }
       .spw-sidebar-label {
+        flex: 1 1 auto;
         min-width: 0;
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
+      }
+      .spw-sidebar-mode {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        min-width: 0;
+        color: var(--dsw-alias-label-tertiary);
+        font-size: 10.5px;
+        line-height: 14px;
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+      }
+      .spw-sidebar-mode-text {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .spw-sidebar-mode-dot {
+        flex: none;
+        width: 5px;
+        height: 5px;
+        border-radius: 50%;
+        background: #55a06d;
+      }
+      .spw-sidebar-mode[data-mode="peak"] .spw-sidebar-mode-dot {
+        background: #d09a3a;
       }
       .spw-sidebar-amount {
         margin-left: auto;
@@ -142,8 +203,7 @@ window.__ModuleLoader__.load({
         justify-content: center;
         border-radius: var(--dsw-radius-md);
       }
-      .spw-sidebar-action[data-wide="false"] .spw-sidebar-label,
-      .spw-sidebar-action[data-wide="false"] .spw-sidebar-amount {
+      .spw-sidebar-action[data-wide="false"] .spw-sidebar-main {
         display: none;
       }
       /* The footer is a single flex row in the host. Let our full-width balance
@@ -187,6 +247,71 @@ window.__ModuleLoader__.load({
       })
       if (magnitude < 0.01) return `${amount < 0 ? '-' : ''}<${symbol}0.01`
       return `${amount < 0 ? '-' : ''}${symbol}${text}`
+    }
+
+    /**
+     * Peak pricing runs 01:00–04:00 and 06:00–10:00 UTC, Monday–Friday.
+     * Kept in sync with `isPeak` in index.js.
+     */
+    function isPeakTime(time) {
+      const date = new Date(time)
+      if (Number.isNaN(date.valueOf())) return false
+      const day = date.getUTCDay()
+      if (day === 0 || day === 6) return false
+      const hour = date.getUTCHours()
+      return (hour >= 1 && hour < 4) || (hour >= 6 && hour < 10)
+    }
+
+    /** Every flip happens on one of these UTC hours; the weekend's is Monday 01:00. */
+    const FLIP_HOURS = [1, 4, 6, 10]
+
+    /** Next instant the peak state flips, or undefined if none is found in a week. */
+    function nextPeakFlip(time) {
+      const current = isPeakTime(time)
+      const base = new Date(time)
+      let next = Infinity
+      for (let added = 0; added <= 7; added += 1) {
+        for (const hour of FLIP_HOURS) {
+          const candidate = Date.UTC(
+            base.getUTCFullYear(),
+            base.getUTCMonth(),
+            base.getUTCDate() + added,
+            hour,
+            0,
+            0,
+            0,
+          )
+          if (candidate <= time) continue
+          if (isPeakTime(candidate) === current) continue
+          if (candidate < next) next = candidate
+        }
+      }
+      return Number.isFinite(next) ? next : undefined
+    }
+
+    function formatDuration(t, ms) {
+      const minutes = Math.max(1, Math.ceil(ms / 60000))
+      const days = Math.floor(minutes / 1440)
+      const hours = Math.floor((minutes % 1440) / 60)
+      const rest = minutes % 60
+      if (days > 0) {
+        return hours > 0
+          ? t('durationDaysHours', { days, hours })
+          : t('durationDays', { days })
+      }
+      if (hours > 0) {
+        return rest > 0
+          ? t('durationHoursMinutes', { hours, minutes: rest })
+          : t('durationHours', { hours })
+      }
+      return t('durationMinutes', { minutes: rest })
+    }
+
+    function formatClock(time) {
+      return new Date(time).toLocaleTimeString(undefined, {
+        hour: 'numeric',
+        minute: '2-digit',
+      })
     }
 
     function WalletGlyph() {
@@ -361,6 +486,7 @@ window.__ModuleLoader__.load({
       const [data, setData] = React.useState(undefined)
       const [phase, setPhase] = React.useState('loading')
       const [balance, setBalance] = React.useState(undefined)
+      const [now, setNow] = React.useState(Date.now())
       // The slot contract always supplies `useSessions`; the fallback only keeps
       // an older host from failing the whole row, it just never pulls live.
       const liveCost = (typeof useSessions === 'function' ? useSessions : noSessions)(selectLiveCost)
@@ -444,6 +570,11 @@ window.__ModuleLoader__.load({
       }, [])
 
       React.useEffect(() => {
+        const timer = setInterval(() => setNow(Date.now()), MODE_TICK_MS)
+        return () => clearInterval(timer)
+      }, [])
+
+      React.useEffect(() => {
         const controller = new AbortController()
         let active = true
         setPhase('loading')
@@ -495,6 +626,14 @@ window.__ModuleLoader__.load({
         }
       }, [schedulePull])
 
+      const peak = isPeakTime(now)
+      const modeLabel = peak ? t('modePeak') : t('modeOffPeak')
+      const nextFlip = nextPeakFlip(now)
+      const remainingText = nextFlip !== undefined ? formatDuration(t, nextFlip - now) : undefined
+      const modeText = remainingText !== undefined
+        ? `${modeLabel} · ${t('modeEndsIn', { duration: remainingText })}`
+        : modeLabel
+
       const balanceValue = balance !== undefined ? balance : data?.balance
       const spend = data?.spend
       const spendReady = spend?.status === 'ready' || spend?.status === 'partial'
@@ -510,7 +649,15 @@ window.__ModuleLoader__.load({
           : '—'
       const sessions = spend?.countedSessions ?? spend?.sessions ?? 0
       const spentDetail = totalCost !== undefined ? formatUsd(totalCost) : '—'
+      const pricingDetail = nextFlip !== undefined && remainingText !== undefined
+        ? t('pricingLine', {
+            mode: modeLabel,
+            duration: remainingText,
+            time: formatClock(nextFlip),
+          })
+        : undefined
       const details = []
+      if (pricingDetail !== undefined) details.push(pricingDetail)
       if (walletText.length > 0) {
         details.push(t('sidebarTitle', {
           balance: walletText,
@@ -528,7 +675,10 @@ window.__ModuleLoader__.load({
       if (spend?.unpricedMessages > 0) details.push(t('unpriced', { count: spend.unpricedMessages }))
       if (spend?.failedSessions > 0) details.push(t('partial', { count: spend.failedSessions }))
       const title = data === undefined
-        ? (phase === 'loading' ? t('sidebarTitleLoading') : t('sidebarTitleUnavailable'))
+        ? [
+            phase === 'loading' ? t('sidebarTitleLoading') : t('sidebarTitleUnavailable'),
+            pricingDetail,
+          ].filter(Boolean).join(' ')
         : details.join(' ')
       const busy = phase === 'loading'
 
@@ -548,8 +698,20 @@ window.__ModuleLoader__.load({
           },
         }, [
           h(WalletGlyph, { key: 'icon' }),
-          h('span', { key: 'label', className: 'spw-sidebar-label' }, t('balance')),
-          h('span', { key: 'amount', className: 'spw-sidebar-amount' }, amountText),
+          h('span', { key: 'main', className: 'spw-sidebar-main' }, [
+            h('span', { key: 'top', className: 'spw-sidebar-top' }, [
+              h('span', { key: 'label', className: 'spw-sidebar-label' }, t('balance')),
+              h('span', { key: 'amount', className: 'spw-sidebar-amount' }, amountText),
+            ]),
+            h('span', {
+              key: 'mode',
+              className: 'spw-sidebar-mode',
+              'data-mode': peak ? 'peak' : 'off-peak',
+            }, [
+              h('span', { key: 'dot', className: 'spw-sidebar-mode-dot' }),
+              h('span', { key: 'text', className: 'spw-sidebar-mode-text' }, modeText),
+            ]),
+          ]),
         ]),
       ])
     }

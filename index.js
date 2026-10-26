@@ -10,7 +10,7 @@
 const ROUTE_PATH = '/plugins/spendwatch/summary'
 const BALANCE_ROUTE_PATH = '/plugins/spendwatch/balance'
 const CACHE_MS = 15_000
-const DEFAULT_CLIENT_VERSION = '1.0.0'
+const DEFAULT_CLIENT_VERSION = '1.1.0'
 const BALANCE_ENDPOINT = 'https://api.deepseek.com/user/balance'
 
 /**
