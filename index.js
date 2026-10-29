@@ -10,7 +10,7 @@
 const ROUTE_PATH = '/plugins/spendwatch/summary'
 const BALANCE_ROUTE_PATH = '/plugins/spendwatch/balance'
 const CACHE_MS = 15_000
-const DEFAULT_CLIENT_VERSION = '1.2.0'
+const DEFAULT_CLIENT_VERSION = '1.3.0'
 const BALANCE_ENDPOINT = 'https://api.deepseek.com/user/balance'
 
 /**
@@ -228,6 +228,40 @@ async function readSessionSpend(sessionQuery, sessionId) {
   }
 }
 
+function normalizeWorkspacePath(path) {
+  return typeof path === 'string' ? path.replace(/[\\/]+$/, '') : path
+}
+
+/**
+ * Session -> Workspace attribution from the official registry, which is what
+ * the sidebar itself groups by. `sessionIds` keeps archived sessions in place;
+ * `byPath` is the fallback for Sessions that are not owned (subagents, or a
+ * Session whose Workspace registration was deleted).
+ */
+function workspaceIndex(ctx) {
+  const registry = ctx.get('workspaceRegistry')
+  if (registry === undefined || typeof registry.list !== 'function') return undefined
+  let list
+  try {
+    list = registry.list()
+  } catch {
+    return undefined
+  }
+  if (!Array.isArray(list)) return undefined
+  const bySession = new Map()
+  const byPath = new Map()
+  for (const workspace of list) {
+    const id = typeof workspace?.id === 'string' ? workspace.id : undefined
+    if (id === undefined) continue
+    const path = workspace?.path
+    if (typeof path === 'string' && path.length > 0) byPath.set(normalizeWorkspacePath(path), id)
+    for (const sessionId of workspace?.sessionIds ?? []) {
+      if (typeof sessionId === 'string') bySession.set(sessionId, id)
+    }
+  }
+  return { bySession, byPath }
+}
+
 async function computeSpend(ctx) {
   const sessionQuery = ctx.get('sessionQuery')
   if (sessionQuery === undefined) {
@@ -243,6 +277,7 @@ async function computeSpend(ctx) {
 
   const bySession = {}
   const byWorkspace = {}
+  const index = workspaceIndex(ctx)
   let totalUsd = 0
   let countedSessions = 0
   let failedSessions = 0
@@ -274,8 +309,10 @@ async function computeSpend(ctx) {
       cacheWriteTokens += value.cacheWriteTokens
       bySession[record.header.id] = value.costUsd
       const cwd = record.header.cwd
-      if (typeof cwd === 'string' && cwd.length > 0) {
-        const workspace = byWorkspace[cwd] ?? (byWorkspace[cwd] = { costUsd: 0, sessions: 0 })
+      const workspaceId = index?.bySession.get(record.header.id)
+        ?? (typeof cwd === 'string' && cwd.length > 0 ? index?.byPath.get(normalizeWorkspacePath(cwd)) : undefined)
+      if (workspaceId !== undefined) {
+        const workspace = byWorkspace[workspaceId] ?? (byWorkspace[workspaceId] = { costUsd: 0, sessions: 0 })
         workspace.costUsd += value.costUsd
         workspace.sessions += 1
       }

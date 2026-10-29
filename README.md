@@ -31,7 +31,7 @@ That's the whole plugin. No extra panels, no settings screen, no separate login.
 - **The session figure follows the tokens** each model call reports, so it moves as replies and tool calls land — including work done by subagents.
 - **A forked conversation** is billed only for what it did after the fork, not for the history it inherited.
 - **The pricing marker** follows DeepSeek's schedule — peak is 01:00–04:00 and 06:00–10:00 UTC, Monday to Friday — and re-evaluates every 10 seconds. It needs no network call.
-- **Workspace totals** come from the same durable fold, grouped by each session's working directory, so archived sessions count. Sessions running now add their live spend on top of the last fold.
+- **Workspace totals** come from the same durable fold, attributed through the official workspace registry's membership (`workspace.sessionIds`, with a cwd fallback for unowned sessions), so archived sessions count. Sessions running now add their live spend on top of the last fold.
 
 ## What the numbers are (and aren't)
 
@@ -85,7 +85,8 @@ Not affiliated with DeepSeek.
 
 - Registers `sidebar.footer.action` (root scope) and `conversation.composer.dock` (session scope) through DSH's slot API.
 - The sidebar computes the peak/off-peak marker locally from the same rule as the Host's `isPeak` (01:00–04:00 and 06:00–10:00 UTC, Mon–Fri), ticks every 10 s, and renders the next flip as a countdown plus a local clock time in the tooltip.
-- The Host also folds spend per Session `cwd` (`byWorkspace` in `/summary`). The Client adds only the post-fold delta for Sessions it has live projections for, then attaches the total to the shipped workspace row identified by `data-row-key="workspace:<id>"` — DSH has no per-workspace slot. If that attribute ever changes, the badges simply stop appearing; nothing else breaks.
+- The Host folds spend per Workspace id (`byWorkspace` in `/summary`): each Session is attributed through `workspaceRegistry.list()` membership, the same account the sidebar renders, so archived Sessions keep their place; unowned Sessions (subagents, deleted registrations) fall back to their `cwd`. The Client adds only the post-fold delta for Sessions it has live projections for, then attaches the total to the shipped workspace row identified by `data-row-key="workspace:<id>"` — DSH has no per-workspace slot. If that attribute ever changes, the badges simply stop appearing; nothing else breaks.
+- Both slot entries are wrapped in a crash boundary that logs the error and re-throws, so a render failure falls back to the shipped UI instead of abdicating silently with no trace.
 - The sidebar sums every session's live `deepseekSpend` from the root `useSessions` snapshot. The client receives control frames for every session whether or not its conversation is open, so background sessions and subagents count. When the sum rises it pulls `/balance`: debounced 200 ms, single-flight, with one queued trailing pull.
 - The composer pill sums the current session's own view with every descendant marked `origin: "subagent"`, recursively. A subagent this app run has never loaded falls back to the `/summary` `bySession` fold.
 - The wallet row sits above the host's existing footer action via a scoped `:has()` wrap; the collapsed rail shows the icon only.

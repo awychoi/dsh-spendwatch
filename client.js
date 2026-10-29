@@ -7,13 +7,44 @@ window.__ModuleLoader__.load({
     const NS = 'spendwatch'
     const ROUTE_PATH = '/plugins/spendwatch/summary'
     const BALANCE_ROUTE_PATH = '/plugins/spendwatch/balance'
-    const CLIENT_VERSION = '1.2.0'
+    const CLIENT_VERSION = '1.3.0'
     /** Coalesce same-tick updates (one turn can commit several Sessions' frames together). */
     const PULL_DEBOUNCE_MS = 200
     /** Minimum gap before a queued follow-up pull, so one turn cannot stampede the wallet API. */
     const PULL_TRAIL_MS = 750
     /** How often the peak/off-peak line re-evaluates. */
     const MODE_TICK_MS = 10_000
+
+    /**
+     * A crashing slot entry abdicates silently: the host's SlotErrorBoundary
+     * retires this entry and elects the next one, and its error anchor unmounts
+     * with it. Log the real error, then re-throw so the fallback still happens.
+     */
+    class CrashBoundary extends React.Component {
+      constructor(props) {
+        super(props)
+        this.state = { error: undefined }
+      }
+
+      static getDerivedStateFromError(error) {
+        return { error }
+      }
+
+      componentDidCatch(error, info) {
+        console.error('spendwatch: slot component crashed', error, info?.componentStack)
+      }
+
+      render() {
+        if (this.state.error !== undefined) throw this.state.error
+        return this.props.children
+      }
+    }
+
+    function guarded(Component) {
+      return function SpendwatchGuard(props) {
+        return h(CrashBoundary, null, h(Component, props))
+      }
+    }
 
     const en = {
       balance: 'Balance',
@@ -412,32 +443,49 @@ window.__ModuleLoader__.load({
      * (archived sessions included); sessions this app run has live projections
      * for add only what they spent after that fold.
      */
-    function workspaceCosts(sessions, spend) {
+    function workspaceCosts(sessions, spend, workspaceItems) {
+      const ownerBySession = new Map()
+      const ownerByPath = new Map()
+      for (const item of Array.isArray(workspaceItems) ? workspaceItems : EMPTY_ITEMS) {
+        if (item === null || typeof item !== 'object') continue
+        const workspaceId = item.workspaceId
+        if (typeof workspaceId !== 'string') continue
+        if (typeof item.path === 'string' && item.path.length > 0) {
+          ownerByPath.set(normalizePath(item.path), workspaceId)
+        }
+        for (const sessionId of item.sessionIds ?? []) {
+          if (typeof sessionId === 'string') ownerBySession.set(sessionId, workspaceId)
+        }
+      }
+
       const totals = new Map()
       const byWorkspace = spend?.byWorkspace
       if (byWorkspace !== null && typeof byWorkspace === 'object') {
-        for (const path of Object.keys(byWorkspace)) {
-          const bucket = byWorkspace[path]
+        for (const workspaceId of Object.keys(byWorkspace)) {
+          const bucket = byWorkspace[workspaceId]
           const cost = typeof bucket?.costUsd === 'number' && Number.isFinite(bucket.costUsd)
             ? bucket.costUsd
             : 0
-          totals.set(normalizePath(path), cost)
+          totals.set(workspaceId, cost)
         }
       }
-      const byId = sessions?.byId
-      if (byId !== null && typeof byId === 'object') {
+
+      const sessionsById = sessions?.byId
+      if (sessionsById !== null && typeof sessionsById === 'object') {
         const bySession = spend?.bySession
-        for (const id of Object.keys(byId)) {
-          const entry = byId[id]
-          const cwd = entry?.cwd
-          if (typeof cwd !== 'string' || cwd.length === 0) continue
+        for (const id of Object.keys(sessionsById)) {
+          const entry = sessionsById[id]
           const live = entry?.projectionValues?.deepseekSpend?.costUsd
           if (typeof live !== 'number' || !Number.isFinite(live)) continue
+          const workspaceId = ownerBySession.get(id)
+            ?? (typeof entry?.cwd === 'string' && entry.cwd.length > 0
+              ? ownerByPath.get(normalizePath(entry.cwd))
+              : undefined)
+          if (workspaceId === undefined) continue
           const atFetch = bySession?.[id]
           const delta = live - (typeof atFetch === 'number' && Number.isFinite(atFetch) ? atFetch : 0)
           if (delta <= 0) continue
-          const key = normalizePath(cwd)
-          totals.set(key, (totals.get(key) ?? 0) + delta)
+          totals.set(workspaceId, (totals.get(workspaceId) ?? 0) + delta)
         }
       }
       return totals
@@ -452,10 +500,10 @@ window.__ModuleLoader__.load({
     const SUBAGENT_CACHE = new WeakMap()
 
     /**
-     * Absolute per-Session costs from the last `/summary` fold, keyed by
-     * Session id. The projection store only holds Sessions this app run has
-     * seen; this fills in subagent Sessions from earlier runs, whose logs the
-     * Host fold already priced.
+     * The last `/summary` spend block (`bySession` and `byWorkspace`), shared
+     * between the sidebar row and the composer pill. The projection store only
+     * holds Sessions this app run has seen; this fills in everything else the
+     * Host fold already priced, archived Sessions and old subagents included.
      */
     const summaryFeed = {
       spend: undefined,
@@ -757,8 +805,8 @@ window.__ModuleLoader__.load({
       }, [workspaceItems])
 
       const workspaceCostMap = React.useMemo(
-        () => workspaceCosts(sessionList, data?.spend),
-        [sessionList, data],
+        () => workspaceCosts(sessionList, data?.spend, workspaceItems),
+        [sessionList, data, workspaceItems],
       )
 
       const workspaceRefs = React.useRef({ costs: workspaceCostMap, byId: workspaceById })
@@ -777,7 +825,7 @@ window.__ModuleLoader__.load({
           if (workspaceId.length === 0) continue
           const workspace = byId.get(workspaceId)
           const path = workspace?.path
-          const cost = typeof path === 'string' ? costs.get(normalizePath(path)) : undefined
+          const cost = costs.get(workspaceId)
           let badge = typeof row.querySelector === 'function'
             ? row.querySelector(':scope > .spw-workspace-cost')
             : null
@@ -961,14 +1009,14 @@ window.__ModuleLoader__.load({
           order: 5,
           locale: NS,
           inject: () => ({ readSummary, readBalance }),
-        }, SidebarBalance))
+        }, guarded(SidebarBalance)))
 
         ctx.slots.inject('conversation.composer.dock', () => ctx.slots.register({
           name: 'conversation.composer.dock',
           id: 'spendwatch-session-spend',
           order: 2,
           locale: NS,
-        }, SessionSpend))
+        }, guarded(SessionSpend)))
       },
     }
   },
