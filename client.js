@@ -7,7 +7,7 @@ window.__ModuleLoader__.load({
     const NS = 'spendwatch'
     const ROUTE_PATH = '/plugins/spendwatch/summary'
     const BALANCE_ROUTE_PATH = '/plugins/spendwatch/balance'
-    const CLIENT_VERSION = '1.1.0'
+    const CLIENT_VERSION = '1.2.0'
     /** Coalesce same-tick updates (one turn can commit several Sessions' frames together). */
     const PULL_DEBOUNCE_MS = 200
     /** Minimum gap before a queued follow-up pull, so one turn cannot stampede the wallet API. */
@@ -17,6 +17,7 @@ window.__ModuleLoader__.load({
 
     const en = {
       balance: 'Balance',
+      workspaceCostTitle: 'Estimated spend in {workspace}, including archived sessions: {amount}',
       modePeak: 'Peak',
       modeOffPeak: 'Off-peak',
       modeEndsIn: 'ends in {duration}',
@@ -44,6 +45,7 @@ window.__ModuleLoader__.load({
 
     const zh = {
       balance: '余额',
+      workspaceCostTitle: '{workspace} 的预估花费（含已归档会话）：{amount}',
       modePeak: '高峰',
       modeOffPeak: '错峰',
       modeEndsIn: '{duration}后结束',
@@ -181,6 +183,14 @@ window.__ModuleLoader__.load({
       }
       .spw-sidebar-mode[data-mode="peak"] .spw-sidebar-mode-dot {
         background: #d09a3a;
+      }
+      .spw-workspace-cost {
+        flex: none;
+        color: var(--dsw-alias-label-tertiary);
+        font-size: 10px;
+        line-height: 16px;
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
       }
       .spw-sidebar-amount {
         margin-left: auto;
@@ -382,6 +392,57 @@ window.__ModuleLoader__.load({
       return selector(EMPTY_SESSIONS)
     }
 
+    const EMPTY_ITEMS = Object.freeze([])
+    const EMPTY_WORKSPACES = Object.freeze({ items: EMPTY_ITEMS })
+    const selectSessions = (state) => state
+    const selectWorkspaceItems = (state) => state?.items ?? EMPTY_ITEMS
+
+    /** Hook-shaped no-op for hosts whose slot contract predates `useWorkspaces`. */
+    function noWorkspaces(selector) {
+      return selector(EMPTY_WORKSPACES)
+    }
+
+    /** Trailing separators differ between the registry and a Session header. */
+    function normalizePath(path) {
+      return typeof path === 'string' ? path.replace(/[\\/]+$/, '') : path
+    }
+
+    /**
+     * Estimated spend per workspace path. The Host's fold is the baseline
+     * (archived sessions included); sessions this app run has live projections
+     * for add only what they spent after that fold.
+     */
+    function workspaceCosts(sessions, spend) {
+      const totals = new Map()
+      const byWorkspace = spend?.byWorkspace
+      if (byWorkspace !== null && typeof byWorkspace === 'object') {
+        for (const path of Object.keys(byWorkspace)) {
+          const bucket = byWorkspace[path]
+          const cost = typeof bucket?.costUsd === 'number' && Number.isFinite(bucket.costUsd)
+            ? bucket.costUsd
+            : 0
+          totals.set(normalizePath(path), cost)
+        }
+      }
+      const byId = sessions?.byId
+      if (byId !== null && typeof byId === 'object') {
+        const bySession = spend?.bySession
+        for (const id of Object.keys(byId)) {
+          const entry = byId[id]
+          const cwd = entry?.cwd
+          if (typeof cwd !== 'string' || cwd.length === 0) continue
+          const live = entry?.projectionValues?.deepseekSpend?.costUsd
+          if (typeof live !== 'number' || !Number.isFinite(live)) continue
+          const atFetch = bySession?.[id]
+          const delta = live - (typeof atFetch === 'number' && Number.isFinite(atFetch) ? atFetch : 0)
+          if (delta <= 0) continue
+          const key = normalizePath(cwd)
+          totals.set(key, (totals.get(key) ?? 0) + delta)
+        }
+      }
+      return totals
+    }
+
     const EMPTY_SUBAGENT_SUMMARY = Object.freeze({ total: 0, count: 0 })
 
     /**
@@ -397,22 +458,21 @@ window.__ModuleLoader__.load({
      * Host fold already priced.
      */
     const summaryFeed = {
-      bySession: undefined,
+      spend: undefined,
       listeners: new Set(),
     }
 
     function publishSummarySpend(spend) {
-      const bySession = spend?.bySession
-      summaryFeed.bySession = bySession !== null && typeof bySession === 'object' ? bySession : undefined
+      summaryFeed.spend = spend !== null && typeof spend === 'object' ? spend : undefined
       for (const listener of summaryFeed.listeners) listener()
     }
 
     function useSummarySpend() {
-      const [value, setValue] = React.useState(summaryFeed.bySession)
+      const [value, setValue] = React.useState(summaryFeed.spend)
       React.useEffect(() => {
-        const listener = () => setValue(summaryFeed.bySession)
+        const listener = () => setValue(summaryFeed.spend)
         summaryFeed.listeners.add(listener)
-        setValue(summaryFeed.bySession)
+        setValue(summaryFeed.spend)
         return () => {
           summaryFeed.listeners.delete(listener)
         }
@@ -481,7 +541,7 @@ window.__ModuleLoader__.load({
       return value
     }
 
-    function SidebarBalance({ wide, t, readSummary, readBalance, useSessions }) {
+    function SidebarBalance({ wide, t, readSummary, readBalance, useSessions, useWorkspaces }) {
       const [refresh, setRefresh] = React.useState(0)
       const [data, setData] = React.useState(undefined)
       const [phase, setPhase] = React.useState('loading')
@@ -489,7 +549,11 @@ window.__ModuleLoader__.load({
       const [now, setNow] = React.useState(Date.now())
       // The slot contract always supplies `useSessions`; the fallback only keeps
       // an older host from failing the whole row, it just never pulls live.
-      const liveCost = (typeof useSessions === 'function' ? useSessions : noSessions)(selectLiveCost)
+      const sessionHook = typeof useSessions === 'function' ? useSessions : noSessions
+      const sessionList = sessionHook(selectSessions)
+      const liveCost = React.useMemo(() => selectLiveCost(sessionList), [sessionList])
+      const workspaceHook = typeof useWorkspaces === 'function' ? useWorkspaces : noWorkspaces
+      const workspaceItems = workspaceHook(selectWorkspaceItems)
       const readRef = React.useRef(readSummary)
       readRef.current = readSummary
       const balanceReadRef = React.useRef(readBalance)
@@ -682,6 +746,74 @@ window.__ModuleLoader__.load({
         : details.join(' ')
       const busy = phase === 'loading'
 
+      const workspaceById = React.useMemo(() => {
+        const map = new Map()
+        for (const item of workspaceItems) {
+          if (item !== null && typeof item === 'object' && typeof item.workspaceId === 'string') {
+            map.set(item.workspaceId, item)
+          }
+        }
+        return map
+      }, [workspaceItems])
+
+      const workspaceCostMap = React.useMemo(
+        () => workspaceCosts(sessionList, data?.spend),
+        [sessionList, data],
+      )
+
+      const workspaceRefs = React.useRef({ costs: workspaceCostMap, byId: workspaceById })
+      workspaceRefs.current = { costs: workspaceCostMap, byId: workspaceById }
+      const translateRef = React.useRef(t)
+      translateRef.current = t
+
+      const syncWorkspaceBadges = React.useCallback(() => {
+        if (typeof document === 'undefined' || typeof document.querySelectorAll !== 'function') return
+        const { costs, byId } = workspaceRefs.current
+        const rows = document.querySelectorAll('[data-row-key^="workspace:"]')
+        for (const row of rows) {
+          const key = typeof row.getAttribute === 'function' ? row.getAttribute('data-row-key') : null
+          if (typeof key !== 'string' || !key.startsWith('workspace:')) continue
+          const workspaceId = key.slice('workspace:'.length)
+          if (workspaceId.length === 0) continue
+          const workspace = byId.get(workspaceId)
+          const path = workspace?.path
+          const cost = typeof path === 'string' ? costs.get(normalizePath(path)) : undefined
+          let badge = typeof row.querySelector === 'function'
+            ? row.querySelector(':scope > .spw-workspace-cost')
+            : null
+          if (typeof cost !== 'number' || !Number.isFinite(cost) || cost <= 0) {
+            if (badge !== null && typeof badge.remove === 'function') badge.remove()
+            continue
+          }
+          if (badge === null && typeof document.createElement === 'function') {
+            badge = document.createElement('span')
+            badge.className = 'spw-workspace-cost'
+            if (typeof row.appendChild === 'function') row.appendChild(badge)
+          }
+          if (badge === null) continue
+          if (badge.parentNode === row && row.lastElementChild !== badge && typeof row.appendChild === 'function') {
+            row.appendChild(badge)
+          }
+          const amount = formatUsd(cost)
+          const text = `~${amount}`
+          if (badge.textContent !== text) badge.textContent = text
+          const label = typeof workspace?.title === 'string' && workspace.title.length > 0
+            ? workspace.title
+            : path
+          const title = translateRef.current('workspaceCostTitle', { workspace: label, amount })
+          if (badge.title !== title) badge.title = title
+        }
+      }, [])
+
+      React.useEffect(() => {
+        syncWorkspaceBadges()
+      }, [syncWorkspaceBadges, workspaceCostMap, workspaceById])
+
+      React.useEffect(() => {
+        const timer = setInterval(syncWorkspaceBadges, 2000)
+        return () => clearInterval(timer)
+      }, [syncWorkspaceBadges])
+
       return h(React.Fragment, null, [
         h('style', { key: 'style', 'data-plugin-css': 'spendwatch/sidebar' }, sidebarStyles),
         h('button', {
@@ -722,7 +854,8 @@ window.__ModuleLoader__.load({
         ? live.costUsd
         : undefined
       const sessionHook = typeof useSessions === 'function' ? useSessions : noSessions
-      const baseline = useSummarySpend()
+      const baselineSpend = useSummarySpend()
+      const baseline = baselineSpend?.bySession
       const selectCost = React.useCallback(
         (sessions) => summarizeSubagents(sessions, sessionId, baseline).total,
         [sessionId, baseline],

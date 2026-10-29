@@ -10,7 +10,7 @@
 const ROUTE_PATH = '/plugins/spendwatch/summary'
 const BALANCE_ROUTE_PATH = '/plugins/spendwatch/balance'
 const CACHE_MS = 15_000
-const DEFAULT_CLIENT_VERSION = '1.1.0'
+const DEFAULT_CLIENT_VERSION = '1.2.0'
 const BALANCE_ENDPOINT = 'https://api.deepseek.com/user/balance'
 
 /**
@@ -242,6 +242,7 @@ async function computeSpend(ctx) {
   }
 
   const bySession = {}
+  const byWorkspace = {}
   let totalUsd = 0
   let countedSessions = 0
   let failedSessions = 0
@@ -272,6 +273,12 @@ async function computeSpend(ctx) {
       cacheReadTokens += value.cacheReadTokens
       cacheWriteTokens += value.cacheWriteTokens
       bySession[record.header.id] = value.costUsd
+      const cwd = record.header.cwd
+      if (typeof cwd === 'string' && cwd.length > 0) {
+        const workspace = byWorkspace[cwd] ?? (byWorkspace[cwd] = { costUsd: 0, sessions: 0 })
+        workspace.costUsd += value.costUsd
+        workspace.sessions += 1
+      }
     }
   }
 
@@ -284,6 +291,7 @@ async function computeSpend(ctx) {
     currency: 'USD',
     totalUsd,
     bySession,
+    byWorkspace,
     sessions: records.length,
     countedSessions,
     failedSessions,
