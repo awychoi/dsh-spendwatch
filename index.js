@@ -13,15 +13,14 @@ const ROUTE_PATH = '/plugins/spendwatch/summary'
 const BALANCE_ROUTE_PATH = '/plugins/spendwatch/balance'
 const PRICING_ROUTE_PATH = '/plugins/spendwatch/pricing'
 const CACHE_MS = 15_000
-const DEFAULT_CLIENT_VERSION = '1.4.0'
+const DEFAULT_CLIENT_VERSION = '1.5.0'
 const BALANCE_ENDPOINT = 'https://api.deepseek.com/user/balance'
 
 /**
  * Pricing is data, not code. `pricing.json` beside this file is a versioned
  * price book: peak windows, the weekday rule, Chinese public holidays, and the
- * rates in effect from each `from` instant. A newer copy can be fetched from
- * the repository at runtime, validated, and adopted without a plugin release;
- * the bundled file (or FALLBACK_BOOK when it is missing) is the offline path.
+ * rates in effect from each `from` instant. It is read at startup; FALLBACK_BOOK
+ * covers a missing or unreadable file. Update the JSON and restart DSH.
  */
 const MODEL_FAMILY = new Map([
   ['deepseek-flash', 'flash'],
@@ -32,10 +31,6 @@ const MODEL_FAMILY = new Map([
   ['deepseek-v4-pro', 'pro'],
 ])
 
-const DEFAULT_PRICING_URL = 'https://raw.githubusercontent.com/awychoi/dsh-spendwatch/main/pricing.json'
-const PRICING_REFRESH_MS = 6 * 60 * 60 * 1000
-const PRICING_FETCH_TIMEOUT_MS = 8_000
-const PRICING_MAX_BYTES = 128 * 1024
 
 /** Last-resort copy if pricing.json is missing or unreadable. */
 const FALLBACK_BOOK = {
@@ -151,8 +146,6 @@ function loadBundledPricing() {
 }
 
 let activePricing = loadBundledPricing()
-let pricingRefreshAt = 0
-let pricingRefreshInflight
 
 /** Beijing calendar date key (YYYY-MM-DD) for an instant. */
 function beijingDateKey(time) {
@@ -221,54 +214,6 @@ function priceEvent(model, time, usage) {
     outputTokens,
     cacheReadTokens,
     cacheWriteTokens,
-  }
-}
-
-/**
- * Adopt a newer price book from the repository without a plugin release.
- * Runs at most once per PRICING_REFRESH_MS; failures keep the current book.
- */
-async function refreshPricing(ctx) {
-  const source = process.env.SPENDWATCH_PRICING_URL ?? DEFAULT_PRICING_URL
-  if (source === '') return
-  if (Date.now() - pricingRefreshAt < PRICING_REFRESH_MS) return
-  if (pricingRefreshInflight !== undefined) return pricingRefreshInflight
-  pricingRefreshAt = Date.now()
-
-  const request = (async () => {
-    let url
-    try {
-      url = new URL(source)
-    } catch {
-      return
-    }
-    if (url.protocol !== 'https:') return
-    const controller = new AbortController()
-    const timer = setTimeout(() => controller.abort(), PRICING_FETCH_TIMEOUT_MS)
-    try {
-      const response = await fetch(url, { signal: controller.signal, redirect: 'error' })
-      if (!response.ok) return
-      const text = await response.text()
-      if (text.length > PRICING_MAX_BYTES) return
-      const book = normalizePricing(JSON.parse(text))
-      if (book === undefined) {
-        ctx.logger?.warn?.('spendwatch: remote pricing book rejected')
-        return
-      }
-      activePricing = book
-      ctx.logger?.info?.(`spendwatch: pricing book ${book.updated} adopted`)
-    } catch {
-      // Offline or slow: the bundled book stays active.
-    } finally {
-      clearTimeout(timer)
-    }
-  })()
-
-  pricingRefreshInflight = request
-  try {
-    await request
-  } finally {
-    if (pricingRefreshInflight === request) pricingRefreshInflight = undefined
   }
 }
 
@@ -842,17 +787,6 @@ export function apply(ctx) {
     }),
     'spendwatch: pricing route',
   )
-
-  ctx.effect(() => {
-    const initial = setTimeout(() => { void refreshPricing(ctx) }, 5_000)
-    const repeat = setInterval(() => { void refreshPricing(ctx) }, PRICING_REFRESH_MS)
-    initial.unref?.()
-    repeat.unref?.()
-    return () => {
-      clearTimeout(initial)
-      clearInterval(repeat)
-    }
-  }, 'spendwatch: pricing refresh')
 }
 
 export { deepseekSpendProjection, priceEvent }

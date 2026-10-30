@@ -8,7 +8,7 @@ window.__ModuleLoader__.load({
     const ROUTE_PATH = '/plugins/spendwatch/summary'
     const BALANCE_ROUTE_PATH = '/plugins/spendwatch/balance'
 const PRICING_ROUTE_PATH = '/plugins/spendwatch/pricing'
-    const CLIENT_VERSION = '1.4.0'
+    const CLIENT_VERSION = '1.5.0'
     /** Coalesce same-tick updates (one turn can commit several Sessions' frames together). */
     const PULL_DEBOUNCE_MS = 200
     /** Minimum gap before a queued follow-up pull, so one turn cannot stampede the wallet API. */

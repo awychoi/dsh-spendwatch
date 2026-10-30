@@ -42,11 +42,9 @@ That's the whole plugin. No extra panels, no settings screen, no separate login.
 
 ## Pricing data
 
-Windows, rates, and holidays live in [`pricing.json`](pricing.json) as a versioned book. Each period carries a `from` instant, the weekday rule, the UTC windows, and the rates in force from then, so history keeps the prices that applied when it happened. The Host validates the file, serves it at `/plugins/spendwatch/pricing`, and can adopt a newer copy from this repository at runtime — checked every six hours, with the bundled copy as the fallback. A DeepSeek price change is therefore a data PR, not a plugin release.
+Windows, rates, and holidays live in [`pricing.json`](pricing.json) as a versioned book. Each period carries a `from` instant, the weekday rule, the UTC windows, and the rates in force from then, so history keeps the prices that applied when it happened. The Host validates the file at startup and serves it at `/plugins/spendwatch/pricing` for the Client.
 
-A scheduled GitHub Action renders DeepSeek's pricing page weekly, updates the book's windows when they change, and opens a pull request for review. The page is a client-rendered SPA, so the Action uses Playwright: if the page stops rendering the job fails, and if the layout changes but still renders, the snapshot lands in a pull request for a manual update. The first run records a baseline.
-
-The Chinese holiday list is a short hardcoded array — add next year's dates when they are announced.
+To update, add a period with the new rates/windows and its effective `from`, then restart DSH. The JSON is the whole update path — no build, no automation. Some of this may be automated by editing and committing the file manually or with an agent; the plugin simply reads it on startup. The Chinese holiday list is a short array; add next year's dates when they are announced.
 
 ## Compatibility
 
@@ -93,7 +91,7 @@ Not affiliated with DeepSeek.
 
 - Registers the `deepseekSpend` session projection: a pure fold over each session's `assistant/message` usage records, priced from [`pricing.json`](pricing.json) — the period in force at each event's timestamp, so windows, weekday rule, holidays, and rates all follow the book.
 - Skips events below a session's `inheritedEventCount`, so fork-inherited history is never priced twice. `stateVersion: 3` invalidates checkpoints written by the earlier pricing and fork states.
-- Loads, validates, and can refresh the price book (`SPENDWATCH_PRICING_URL` overrides the source; an empty value disables the refresh).
+- Loads and validates the price book at startup; a malformed or missing file falls back to the bundled copy.
 - Serves three read-only routes on the DSH Web server:
   - `GET /plugins/spendwatch/summary` — wallet plus the all-session estimate. The spend half is cached for 15 s; `refresh=1` bypasses it.
   - `GET /plugins/spendwatch/balance` — wallet only, no fold. Concurrent callers share one in-flight upstream read.
