@@ -40,6 +40,15 @@ That's the whole plugin. No extra panels, no settings screen, no separate login.
 - The peak/off-peak marker follows the plain weekday schedule; Chinese public holidays aren't modelled there either, so it can disagree with DeepSeek on those days.
 - Spendwatch is provided **as-is, without warranty** — it makes no promise of accuracy, completeness, or timeliness. Use it at your own risk.
 
+## Compatibility
+
+Built against **DSH 0.2.x**. Spendwatch has no build step, no npm dependencies, and stores nothing of its own.
+
+- It rides DSH's extension surfaces: the plugin bundle format, the `sidebar.footer.action` and `conversation.composer.dock` slots, the `sessionProjections` seam, and the `sessionQuery` / `workspaceRegistry` services. A release that renames one of those will need a matching update.
+- It degrades instead of breaking: without `sessionQuery` the spend figures are unavailable but the balance still works; without `workspaceRegistry` (or `useWorkspaces`) the workspace badges are skipped; without `deepseekAccount` it falls back to `DEEPSEEK_API_KEY`. Each slot entry sits behind a crash boundary, so a render error falls back to the shipped UI rather than blanking it.
+- The **workspace badges are the least stable piece.** DSH has no per-workspace slot, so they attach to the shipped row through `data-row-key`. If a release changes that attribute, the badges disappear and nothing else is affected.
+- After a DSH update, reload the page (client half) and restart DSH (Host half), then check the three surfaces: sidebar balance, workspace totals, composer pill.
+
 ## Install
 
 1. In DSH, open **Plugins → Install**.

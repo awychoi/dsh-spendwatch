@@ -955,7 +955,14 @@ window.__ModuleLoader__.load({
       inject: ['slots', 'locale'],
       apply(ctx) {
         ctx.effect(
-          () => ctx.locale.register(NS, { en, zh }),
+          () => {
+            try {
+              return ctx.locale.register(NS, { en, zh })
+            } catch (error) {
+              console.error('spendwatch: locale registration failed', error)
+              return undefined
+            }
+          },
           'spendwatch: dictionaries',
         )
 
@@ -1003,20 +1010,28 @@ window.__ModuleLoader__.load({
           return value.balance
         }
 
-        ctx.slots.inject('sidebar.footer.action', () => ctx.slots.register({
+        const registerSlot = (name, options, Component) => {
+          try {
+            ctx.slots.inject(name, () => ctx.slots.register(options, Component))
+          } catch (error) {
+            console.error(`spendwatch: ${name} slot registration failed`, error)
+          }
+        }
+
+        registerSlot('sidebar.footer.action', {
           name: 'sidebar.footer.action',
           id: 'spendwatch',
           order: 5,
           locale: NS,
           inject: () => ({ readSummary, readBalance }),
-        }, guarded(SidebarBalance)))
+        }, guarded(SidebarBalance))
 
-        ctx.slots.inject('conversation.composer.dock', () => ctx.slots.register({
+        registerSlot('conversation.composer.dock', {
           name: 'conversation.composer.dock',
           id: 'spendwatch-session-spend',
           order: 2,
           locale: NS,
-        }, guarded(SessionSpend)))
+        }, guarded(SessionSpend))
       },
     }
   },
