@@ -2,16 +2,17 @@
 
 **A DeepSeek Harness plugin that keeps your DeepSeek balance and what each conversation costs in view.**
 
-Spendwatch is an add-on for **DeepSeek Harness (DSH)**. Once installed, two small pieces of UI appear:
+Spendwatch is an add-on for **DeepSeek Harness (DSH)**. Once installed, it puts the money where you're already looking:
 
-- **Your balance** — in the left sidebar, where you already look.
-- **What this conversation has spent** — in a pill under the message box.
+- **Your balance** — in the left sidebar, with a live **peak / off-peak** marker and a countdown to the next pricing flip.
+- **What each workspace has spent** — right on the workspace row, archived sessions included.
+- **What this conversation has spent** — in a pill under the message box, subagents included.
 
-Both move on their own while you work, so you can watch the wallet drain without keeping the DeepSeek platform open in another tab.
+They move on their own while you work, so you can watch the wallet drain without keeping the DeepSeek platform open in another tab.
 
 ![Spendwatch highlighted in DeepSeek Harness: the Balance row in the sidebar and the session spend in the composer dock](docs/screenshot.png)
 
-*The two numbers Spendwatch adds, highlighted: your balance on the left, and this session’s spend on the right.*
+*Highlighted: your balance on the left, and this session’s spend on the right. The workspace totals and the peak/off-peak line are described below.*
 
 ## Where things are
 
