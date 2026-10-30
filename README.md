@@ -44,7 +44,7 @@ That's the whole plugin. No extra panels, no settings screen, no separate login.
 
 Windows, rates, and holidays live in [`pricing.json`](pricing.json) as a versioned book. Each period carries a `from` instant, the weekday rule, the UTC windows, and the rates in force from then, so history keeps the prices that applied when it happened. The Host validates the file, serves it at `/plugins/spendwatch/pricing`, and can adopt a newer copy from this repository at runtime — checked every six hours, with the bundled copy as the fallback. A DeepSeek price change is therefore a data PR, not a plugin release.
 
-A scheduled GitHub Action renders DeepSeek's pricing page weekly, updates the book's windows when the schedule changes, and opens a pull request for review. The page is a client-rendered SPA, so the Action uses Playwright; if the page layout changes, the Action fails loudly instead of guessing.
+A scheduled GitHub Action renders DeepSeek's pricing page weekly, updates the book's windows when they change, and opens a pull request for review. The page is a client-rendered SPA, so the Action uses Playwright: if the page stops rendering the job fails, and if the layout changes but still renders, the snapshot lands in a pull request for a manual update. The first run records a baseline.
 
 The Chinese holiday list is a short hardcoded array — add next year's dates when they are announced.
 
