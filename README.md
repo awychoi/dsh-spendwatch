@@ -29,16 +29,24 @@ That's the whole plugin. No extra panels, no settings screen, no separate login.
 - **The balance is re-read from DeepSeek** whenever a running conversation adds to its cost, when you come back to the window, and when you click the row. Nothing polls while you're idle.
 - **The session figure follows the tokens** each model call reports, so it moves as replies and tool calls land — including work done by subagents.
 - **A forked conversation** is billed only for what it did after the fork, not for the history it inherited.
-- **The pricing marker** follows DeepSeek's schedule — peak is 01:00–04:00 and 06:00–10:00 UTC, Monday to Friday — and re-evaluates every 10 seconds. It needs no network call.
+- **The pricing marker** follows DeepSeek's schedule — peak is 01:00–04:00 and 06:00–10:00 UTC, on weekdays in Beijing time; weekends and Chinese public holidays are off-peak all day. It re-evaluates every 10 seconds from the price book described below.
 - **Workspace totals** come from the same durable fold, attributed through the official workspace registry's membership (`workspace.sessionIds`, with a cwd fallback for unowned sessions), so archived sessions count. Sessions running now add their live spend on top of the last fold.
 
 ## What the numbers are (and aren't)
 
 - The **balance** is the real wallet: whatever DeepSeek's API last told us.
 - The **spend** is an **estimate**: tokens × DeepSeek's published list prices, including peak/off-peak and cache-hit/miss rates. It is not a billing record.
-- Expect small differences. Unpriced models are skipped, public holidays aren't modelled, and DeepSeek's ledger can settle after the fact. **Don't reconcile an invoice with it.**
-- The peak/off-peak marker follows the plain weekday schedule; Chinese public holidays aren't modelled there either, so it can disagree with DeepSeek on those days.
+- Expect small differences. Unpriced models are skipped, Search/Fetch per-request fees are not modelled, and DeepSeek's ledger can settle after the fact. **Don't reconcile an invoice with it.**
+- Chinese public holidays are modelled through 2026 as off-peak all day; the 2027 dates need adding when the State Council announces them.
 - Spendwatch is provided **as-is, without warranty** — it makes no promise of accuracy, completeness, or timeliness. Use it at your own risk.
+
+## Pricing data
+
+Windows, rates, and holidays live in [`pricing.json`](pricing.json) as a versioned book. Each period carries a `from` instant, the weekday rule, the UTC windows, and the rates in force from then, so history keeps the prices that applied when it happened. The Host validates the file, serves it at `/plugins/spendwatch/pricing`, and can adopt a newer copy from this repository at runtime — checked every six hours, with the bundled copy as the fallback. A DeepSeek price change is therefore a data PR, not a plugin release.
+
+A scheduled GitHub Action renders DeepSeek's pricing page weekly, updates the book's windows when the schedule changes, and opens a pull request for review. The page is a client-rendered SPA, so the Action uses Playwright; if the page layout changes, the Action fails loudly instead of guessing.
+
+The Chinese holiday list is a short hardcoded array — add next year's dates when they are announced.
 
 ## Compatibility
 
@@ -83,16 +91,18 @@ Not affiliated with DeepSeek.
 
 **Host** ([`index.js`](index.js))
 
-- Registers the `deepseekSpend` session projection: a pure fold over each session's `assistant/message` usage records, priced from DeepSeek's published per-million-token rates (peak/off-peak, cache-hit/miss, legacy aliases mapped to current models).
-- Skips events below a session's `inheritedEventCount`, so fork-inherited history is never priced twice. `stateVersion: 2` invalidates checkpoints written by the earlier, double-counting state.
-- Serves two read-only routes on the DSH Web server:
+- Registers the `deepseekSpend` session projection: a pure fold over each session's `assistant/message` usage records, priced from [`pricing.json`](pricing.json) — the period in force at each event's timestamp, so windows, weekday rule, holidays, and rates all follow the book.
+- Skips events below a session's `inheritedEventCount`, so fork-inherited history is never priced twice. `stateVersion: 3` invalidates checkpoints written by the earlier pricing and fork states.
+- Loads, validates, and can refresh the price book (`SPENDWATCH_PRICING_URL` overrides the source; an empty value disables the refresh).
+- Serves three read-only routes on the DSH Web server:
   - `GET /plugins/spendwatch/summary` — wallet plus the all-session estimate. The spend half is cached for 15 s; `refresh=1` bypasses it.
   - `GET /plugins/spendwatch/balance` — wallet only, no fold. Concurrent callers share one in-flight upstream read.
+  - `GET /plugins/spendwatch/pricing` — the validated price book the Client renders its marker from.
 
 **Client** ([`client.js`](client.js))
 
 - Registers `sidebar.footer.action` (root scope) and `conversation.composer.dock` (session scope) through DSH's slot API.
-- The sidebar computes the peak/off-peak marker locally from the same rule as the Host's `isPeak` (01:00–04:00 and 06:00–10:00 UTC, Mon–Fri), ticks every 10 s, and renders the next flip as a countdown plus a local clock time in the tooltip.
+- The sidebar fetches the price book from `/pricing` (bundled copy as fallback), computes the peak/off-peak marker from the period in force, ticks every 10 s, and renders the next flip as a countdown plus a local clock time in the tooltip. Holidays and the Beijing weekday rule are part of the book, so the marker matches the prices the Host charged.
 - The Host folds spend per Workspace id (`byWorkspace` in `/summary`): each Session is attributed through `workspaceRegistry.list()` membership, the same account the sidebar renders, so archived Sessions keep their place; unowned Sessions (subagents, deleted registrations) fall back to their `cwd`. The Client adds only the post-fold delta for Sessions it has live projections for, then attaches the total to the shipped workspace row identified by `data-row-key="workspace:<id>"` — DSH has no per-workspace slot. If that attribute ever changes, the badges simply stop appearing; nothing else breaks.
 - Both slot entries are wrapped in a crash boundary that logs the error and re-throws, so a render failure falls back to the shipped UI instead of abdicating silently with no trace.
 - The sidebar sums every session's live `deepseekSpend` from the root `useSessions` snapshot. The client receives control frames for every session whether or not its conversation is open, so background sessions and subagents count. When the sum rises it pulls `/balance`: debounced 200 ms, single-flight, with one queued trailing pull.
@@ -104,6 +114,7 @@ Not affiliated with DeepSeek.
 | File | Role |
 |---|---|
 | `index.js` | Host half: projection + routes |
+| `pricing.json` | Versioned price book: windows, weekday rule, holidays, rates |
 | `client.js` | Client half: sidebar row + composer pill |
 | `cordis.patch.yml` | Registers the bundle in a DSH profile |
 | `locale/en.json`, `locale/zh.json` | Plugin-manager title and description |

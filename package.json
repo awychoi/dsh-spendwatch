@@ -1,6 +1,6 @@
 {
   "name": "dsh-spendwatch",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "private": true,
   "type": "module",
   "description": "Spendwatch \u2014 live DeepSeek balance and conversation spend for DeepSeek Harness",
@@ -34,7 +34,8 @@
     "locale/*.json",
     "icon.svg",
     "README.md",
-    "LICENSE"
+    "LICENSE",
+    "pricing.json"
   ],
   "dsh": {
     "bundle": {

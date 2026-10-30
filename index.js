@@ -7,34 +7,270 @@
  * available, otherwise from the configured DeepSeek API key.
  */
 
+import { readFileSync } from 'node:fs'
+
 const ROUTE_PATH = '/plugins/spendwatch/summary'
 const BALANCE_ROUTE_PATH = '/plugins/spendwatch/balance'
+const PRICING_ROUTE_PATH = '/plugins/spendwatch/pricing'
 const CACHE_MS = 15_000
-const DEFAULT_CLIENT_VERSION = '1.3.0'
+const DEFAULT_CLIENT_VERSION = '1.4.0'
 const BALANCE_ENDPOINT = 'https://api.deepseek.com/user/balance'
 
 /**
- * USD per 1,000,000 tokens from DeepSeek's published price list.
- * Peak hours are 01:00–04:00 and 06:00–10:00 UTC, Monday–Friday.
- * Chinese public holidays are not modelled; the UI labels the result as an
- * estimate. Legacy aliases resolve to the model that now serves them.
+ * Pricing is data, not code. `pricing.json` beside this file is a versioned
+ * price book: peak windows, the weekday rule, Chinese public holidays, and the
+ * rates in effect from each `from` instant. A newer copy can be fetched from
+ * the repository at runtime, validated, and adopted without a plugin release;
+ * the bundled file (or FALLBACK_BOOK when it is missing) is the offline path.
  */
-const FLASH = {
-  peak: { cacheHit: 0.006, cacheMiss: 0.3, output: 1.2 },
-  offPeak: { cacheHit: 0.003, cacheMiss: 0.15, output: 0.6 },
-}
-const PRO = {
-  peak: { cacheHit: 0.044, cacheMiss: 1.32, output: 3.96 },
-  offPeak: { cacheHit: 0.022, cacheMiss: 0.66, output: 1.98 },
-}
-const PRICING = new Map([
-  ['deepseek-flash', FLASH],
-  ['deepseek-v4-flash', FLASH],
-  ['deepseek-v4-flash-vision-exp', FLASH],
-  ['deepseek-chat', FLASH],
-  ['deepseek-reasoner', FLASH],
-  ['deepseek-v4-pro', PRO],
+const MODEL_FAMILY = new Map([
+  ['deepseek-flash', 'flash'],
+  ['deepseek-v4-flash', 'flash'],
+  ['deepseek-v4-flash-vision-exp', 'flash'],
+  ['deepseek-chat', 'flash'],
+  ['deepseek-reasoner', 'flash'],
+  ['deepseek-v4-pro', 'pro'],
 ])
+
+const DEFAULT_PRICING_URL = 'https://raw.githubusercontent.com/awychoi/dsh-spendwatch/main/pricing.json'
+const PRICING_REFRESH_MS = 6 * 60 * 60 * 1000
+const PRICING_FETCH_TIMEOUT_MS = 8_000
+const PRICING_MAX_BYTES = 128 * 1024
+
+/** Last-resort copy if pricing.json is missing or unreadable. */
+const FALLBACK_BOOK = {
+  schema: 1,
+  updated: 'fallback',
+  holidays: [
+    { from: '2026-09-25', to: '2026-09-27' },
+    { from: '2026-10-01', to: '2026-10-07' },
+  ],
+  periods: [
+    {
+      from: '1970-01-01T00:00:00.000Z',
+      weekdays: 'beijing',
+      windows: [
+        { start: '01:00', end: '04:00' },
+        { start: '06:00', end: '10:00' },
+      ],
+      rates: {
+        flash: {
+          peak: { cacheHit: 0.006, cacheMiss: 0.3, output: 1.2 },
+          offPeak: { cacheHit: 0.003, cacheMiss: 0.15, output: 0.6 },
+        },
+        pro: {
+          peak: { cacheHit: 0.044, cacheMiss: 1.32, output: 3.96 },
+          offPeak: { cacheHit: 0.022, cacheMiss: 0.66, output: 1.98 },
+        },
+      },
+    },
+  ],
+}
+
+/** Parse "HH:MM" into minutes of day, or undefined. */
+function pricingMinutes(text) {
+  if (typeof text !== 'string') return undefined
+  const match = /^([01]?\d|2[0-3]):([0-5]\d)$/.exec(text)
+  if (match === null) return undefined
+  return Number(match[1]) * 60 + Number(match[2])
+}
+
+function normalizeRateSet(value) {
+  if (value === null || typeof value !== 'object') return undefined
+  const out = {}
+  for (const field of ['cacheHit', 'cacheMiss', 'output']) {
+    const number = value[field]
+    if (typeof number !== 'number' || !Number.isFinite(number) || number < 0) return undefined
+    out[field] = number
+  }
+  return out
+}
+
+/** Validate a price book. Unknown fields are ignored; a bad row rejects the book. */
+function normalizePricing(value) {
+  if (value === null || typeof value !== 'object' || Array.isArray(value)) return undefined
+  if (value.schema !== 1) return undefined
+  if (!Array.isArray(value.holidays) || !Array.isArray(value.periods) || value.periods.length === 0) {
+    return undefined
+  }
+
+  const holidays = []
+  for (const holiday of value.holidays) {
+    if (typeof holiday?.from !== 'string' || typeof holiday?.to !== 'string') return undefined
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(holiday.from) || !/^\d{4}-\d{2}-\d{2}$/.test(holiday.to)) {
+      return undefined
+    }
+    if (holiday.from > holiday.to) return undefined
+    holidays.push({ from: holiday.from, to: holiday.to })
+  }
+
+  const periods = []
+  for (const period of value.periods) {
+    const from = Date.parse(period?.from)
+    if (!Number.isFinite(from)) return undefined
+    if (period.weekdays !== 'all' && period.weekdays !== 'beijing') return undefined
+    if (!Array.isArray(period.windows) || period.windows.length === 0) return undefined
+    const windows = []
+    for (const window of period.windows) {
+      const start = pricingMinutes(window?.start)
+      const end = pricingMinutes(window?.end)
+      if (start === undefined || end === undefined || end <= start) return undefined
+      windows.push([start, end])
+    }
+    const rates = {}
+    for (const family of ['flash', 'pro']) {
+      const peak = normalizeRateSet(period.rates?.[family]?.peak)
+      const offPeak = normalizeRateSet(period.rates?.[family]?.offPeak)
+      if (peak === undefined || offPeak === undefined) return undefined
+      rates[family] = { peak, offPeak }
+    }
+    periods.push({ from, weekdays: period.weekdays, windows, rates })
+  }
+  periods.sort((left, right) => left.from - right.from)
+
+  return {
+    raw: value,
+    holidays,
+    periods,
+    updated: typeof value.updated === 'string' ? value.updated : '',
+  }
+}
+
+function loadBundledPricing() {
+  try {
+    const text = readFileSync(new URL('./pricing.json', import.meta.url), 'utf8')
+    const book = normalizePricing(JSON.parse(text))
+    if (book !== undefined) return book
+    console.warn('spendwatch: bundled pricing.json is invalid; using the fallback book')
+  } catch (error) {
+    console.warn('spendwatch: cannot read bundled pricing.json; using the fallback book', error)
+  }
+  const fallback = normalizePricing(FALLBACK_BOOK)
+  if (fallback === undefined) throw new Error('spendwatch: fallback pricing is invalid')
+  return fallback
+}
+
+let activePricing = loadBundledPricing()
+let pricingRefreshAt = 0
+let pricingRefreshInflight
+
+/** Beijing calendar date key (YYYY-MM-DD) for an instant. */
+function beijingDateKey(time) {
+  return new Date(time + 8 * 3600000).toISOString().slice(0, 10)
+}
+
+function isBeijingWeekend(time) {
+  const day = new Date(time + 8 * 3600000).getUTCDay()
+  return day === 0 || day === 6
+}
+
+function isHoliday(time) {
+  const key = beijingDateKey(time)
+  for (const holiday of activePricing.holidays) {
+    if (key >= holiday.from && key <= holiday.to) return true
+  }
+  return false
+}
+
+function periodAt(time) {
+  let chosen = activePricing.periods[0]
+  for (const period of activePricing.periods) {
+    if (period.from <= time) chosen = period
+  }
+  return chosen
+}
+
+/** Peak state at an instant, using the price book period in effect then. */
+function isPeak(time) {
+  const date = new Date(time)
+  if (Number.isNaN(date.valueOf())) return false
+  if (isHoliday(time)) return false
+  const period = periodAt(time)
+  if (period === undefined) return false
+  if (period.weekdays === 'beijing' && isBeijingWeekend(time)) return false
+  const minute = date.getUTCHours() * 60 + date.getUTCMinutes()
+  return period.windows.some(([start, end]) => minute >= start && minute < end)
+}
+
+function priceFor(model, time) {
+  if (typeof model !== 'string' || model.length === 0) return undefined
+  if (!Number.isFinite(time)) return undefined
+  const family = MODEL_FAMILY.get(model.toLowerCase())
+  if (family === undefined) return undefined
+  const period = periodAt(time)
+  if (period === undefined) return undefined
+  return isPeak(time) ? period.rates[family].peak : period.rates[family].offPeak
+}
+
+function priceEvent(model, time, usage) {
+  const price = priceFor(model, time)
+  if (price === undefined) return undefined
+  const inputTokens = finiteUsage(usage.inputTokens)
+  const outputTokens = finiteUsage(usage.outputTokens)
+  const cacheReadTokens = finiteUsage(usage.cacheReadTokens)
+  const cacheWriteTokens = finiteUsage(usage.cacheWriteTokens)
+  const costUsd = (
+    inputTokens * price.cacheMiss
+    + cacheReadTokens * price.cacheHit
+    + cacheWriteTokens * price.cacheMiss
+    + outputTokens * price.output
+  ) / 1_000_000
+  return {
+    costUsd,
+    inputTokens,
+    outputTokens,
+    cacheReadTokens,
+    cacheWriteTokens,
+  }
+}
+
+/**
+ * Adopt a newer price book from the repository without a plugin release.
+ * Runs at most once per PRICING_REFRESH_MS; failures keep the current book.
+ */
+async function refreshPricing(ctx) {
+  const source = process.env.SPENDWATCH_PRICING_URL ?? DEFAULT_PRICING_URL
+  if (source === '') return
+  if (Date.now() - pricingRefreshAt < PRICING_REFRESH_MS) return
+  if (pricingRefreshInflight !== undefined) return pricingRefreshInflight
+  pricingRefreshAt = Date.now()
+
+  const request = (async () => {
+    let url
+    try {
+      url = new URL(source)
+    } catch {
+      return
+    }
+    if (url.protocol !== 'https:') return
+    const controller = new AbortController()
+    const timer = setTimeout(() => controller.abort(), PRICING_FETCH_TIMEOUT_MS)
+    try {
+      const response = await fetch(url, { signal: controller.signal, redirect: 'error' })
+      if (!response.ok) return
+      const text = await response.text()
+      if (text.length > PRICING_MAX_BYTES) return
+      const book = normalizePricing(JSON.parse(text))
+      if (book === undefined) {
+        ctx.logger?.warn?.('spendwatch: remote pricing book rejected')
+        return
+      }
+      activePricing = book
+      ctx.logger?.info?.(`spendwatch: pricing book ${book.updated} adopted`)
+    } catch {
+      // Offline or slow: the bundled book stays active.
+    } finally {
+      clearTimeout(timer)
+    }
+  })()
+
+  pricingRefreshInflight = request
+  try {
+    await request
+  } finally {
+    if (pricingRefreshInflight === request) pricingRefreshInflight = undefined
+  }
+}
 
 const NUMERIC_FIELDS = [
   'costUsd',
@@ -97,44 +333,6 @@ function finiteUsage(value) {
   return isNonNegativeNumber(value) ? value : 0
 }
 
-function isPeak(time) {
-  const date = new Date(time)
-  if (Number.isNaN(date.valueOf())) return false
-  const day = date.getUTCDay()
-  if (day === 0 || day === 6) return false
-  const hour = date.getUTCHours()
-  return (hour >= 1 && hour < 4) || (hour >= 6 && hour < 10)
-}
-
-function modelPrice(model, time) {
-  if (typeof model !== 'string' || model.length === 0) return undefined
-  const table = PRICING.get(model.toLowerCase())
-  if (table === undefined) return undefined
-  return isPeak(time) ? table.peak : table.offPeak
-}
-
-function priceEvent(model, time, usage) {
-  const price = modelPrice(model, time)
-  if (price === undefined) return undefined
-  const inputTokens = finiteUsage(usage.inputTokens)
-  const outputTokens = finiteUsage(usage.outputTokens)
-  const cacheReadTokens = finiteUsage(usage.cacheReadTokens)
-  const cacheWriteTokens = finiteUsage(usage.cacheWriteTokens)
-  const costUsd = (
-    inputTokens * price.cacheMiss
-    + cacheReadTokens * price.cacheHit
-    + cacheWriteTokens * price.cacheMiss
-    + outputTokens * price.output
-  ) / 1_000_000
-  return {
-    costUsd,
-    inputTokens,
-    outputTokens,
-    cacheReadTokens,
-    cacheWriteTokens,
-  }
-}
-
 function applySpend(state, event) {
   if (Number(event?.seq) < state.inheritedEventCount) return state
   if (event?.type !== 'assistant/message') return state
@@ -176,7 +374,7 @@ function viewSpend(state) {
 /** Client-visible projection consumed through the normal Session projection seam. */
 const deepseekSpendProjection = {
   key: 'deepseekSpend',
-  stateVersion: 2,
+  stateVersion: 3,
   stateSchema: spendSchema,
   init: emptySpend,
   apply: applySpend,
@@ -562,6 +760,16 @@ function createBalanceHandler(ctx) {
   }
 }
 
+function createPricingHandler() {
+  return async (request, response) => {
+    if (request.method !== 'GET') {
+      sendJson(response, 405, { ok: false, error: 'method-not-allowed' })
+      return
+    }
+    sendJson(response, 200, { ok: true, pricing: activePricing.raw, now: Date.now() })
+  }
+}
+
 function createHandler(ctx) {
   return async (request, response) => {
     if (request.method !== 'GET') {
@@ -625,6 +833,26 @@ export function apply(ctx) {
     }),
     'spendwatch: balance route',
   )
+
+  ctx.effect(
+    () => ctx.webServer.register({
+      kind: 'exact',
+      path: PRICING_ROUTE_PATH,
+      handler: createPricingHandler(),
+    }),
+    'spendwatch: pricing route',
+  )
+
+  ctx.effect(() => {
+    const initial = setTimeout(() => { void refreshPricing(ctx) }, 5_000)
+    const repeat = setInterval(() => { void refreshPricing(ctx) }, PRICING_REFRESH_MS)
+    initial.unref?.()
+    repeat.unref?.()
+    return () => {
+      clearTimeout(initial)
+      clearInterval(repeat)
+    }
+  }, 'spendwatch: pricing refresh')
 }
 
 export { deepseekSpendProjection, priceEvent }

@@ -7,7 +7,8 @@ window.__ModuleLoader__.load({
     const NS = 'spendwatch'
     const ROUTE_PATH = '/plugins/spendwatch/summary'
     const BALANCE_ROUTE_PATH = '/plugins/spendwatch/balance'
-    const CLIENT_VERSION = '1.3.0'
+const PRICING_ROUTE_PATH = '/plugins/spendwatch/pricing'
+    const CLIENT_VERSION = '1.4.0'
     /** Coalesce same-tick updates (one turn can commit several Sessions' frames together). */
     const PULL_DEBOUNCE_MS = 200
     /** Minimum gap before a queued follow-up pull, so one turn cannot stampede the wallet API. */
@@ -291,43 +292,122 @@ window.__ModuleLoader__.load({
     }
 
     /**
-     * Peak pricing runs 01:00–04:00 and 06:00–10:00 UTC, Monday–Friday.
-     * Kept in sync with `isPeak` in index.js.
+     * Offline copy of `pricing.json` for the first paint and for a Host that
+     * cannot serve /pricing. The Host validates and serves the real book.
      */
-    function isPeakTime(time) {
-      const date = new Date(time)
-      if (Number.isNaN(date.valueOf())) return false
-      const day = date.getUTCDay()
-      if (day === 0 || day === 6) return false
-      const hour = date.getUTCHours()
-      return (hour >= 1 && hour < 4) || (hour >= 6 && hour < 10)
+    const DEFAULT_PRICING = {
+      schema: 1,
+      updated: '2026-10-29',
+      holidays: [
+        { from: '2026-09-25', to: '2026-09-27' },
+        { from: '2026-10-01', to: '2026-10-07' },
+      ],
+      periods: [
+        {
+          from: '1970-01-01T00:00:00.000Z',
+          weekdays: 'all',
+          windows: [
+            { start: '01:00', end: '04:00' },
+            { start: '06:00', end: '10:00' },
+          ],
+        },
+        {
+          from: '2026-08-22T16:00:00.000Z',
+          weekdays: 'beijing',
+          windows: [
+            { start: '01:00', end: '04:00' },
+            { start: '06:00', end: '10:00' },
+          ],
+        },
+      ],
     }
 
-    /** Every flip happens on one of these UTC hours; the weekend's is Monday 01:00. */
-    const FLIP_HOURS = [1, 4, 6, 10]
+    function pricingMinutes(text) {
+      const match = /^([01]?\d|2[0-3]):([0-5]\d)$/.exec(text)
+      return match === null ? undefined : Number(match[1]) * 60 + Number(match[2])
+    }
 
-    /** Next instant the peak state flips, or undefined if none is found in a week. */
-    function nextPeakFlip(time) {
-      const current = isPeakTime(time)
-      const base = new Date(time)
-      let next = Infinity
-      for (let added = 0; added <= 7; added += 1) {
-        for (const hour of FLIP_HOURS) {
-          const candidate = Date.UTC(
-            base.getUTCFullYear(),
-            base.getUTCMonth(),
-            base.getUTCDate() + added,
-            hour,
-            0,
-            0,
-            0,
-          )
-          if (candidate <= time) continue
-          if (isPeakTime(candidate) === current) continue
-          if (candidate < next) next = candidate
+    /** The price-book period in effect at an instant. */
+    function periodAt(book, time) {
+      const periods = Array.isArray(book?.periods) ? book.periods : []
+      let chosen
+      let chosenFrom = -Infinity
+      for (const period of periods) {
+        const from = Date.parse(period?.from)
+        if (!Number.isFinite(from) || from > time) continue
+        if (from >= chosenFrom) {
+          chosen = period
+          chosenFrom = from
         }
       }
-      return Number.isFinite(next) ? next : undefined
+      return chosen ?? periods[0]
+    }
+
+    function beijingDateKey(time) {
+      return new Date(time + 8 * 3600000).toISOString().slice(0, 10)
+    }
+
+    function isBeijingWeekend(time) {
+      const day = new Date(time + 8 * 3600000).getUTCDay()
+      return day === 0 || day === 6
+    }
+
+    /** Peak state at an instant, using the period and holidays in force then. */
+    function isPeakAt(book, time) {
+      const date = new Date(time)
+      if (Number.isNaN(date.valueOf())) return false
+      const key = beijingDateKey(time)
+      for (const holiday of book?.holidays ?? []) {
+        if (typeof holiday?.from === 'string' && typeof holiday?.to === 'string'
+          && key >= holiday.from && key <= holiday.to) return false
+      }
+      const period = periodAt(book, time)
+      if (period === undefined) return false
+      if (period.weekdays === 'beijing' && isBeijingWeekend(time)) return false
+      const minute = date.getUTCHours() * 60 + date.getUTCMinutes()
+      for (const window of period.windows ?? []) {
+        const start = pricingMinutes(window?.start)
+        const end = pricingMinutes(window?.end)
+        if (start !== undefined && end !== undefined && minute >= start && minute < end) return true
+      }
+      return false
+    }
+
+    /**
+     * Next instant the peak state flips. Candidates are every window boundary
+     * (per period) and Beijing midnight for 21 days — enough to cross a
+     * seven-day holiday plus weekends — with holiday and period starts added.
+     */
+    function nextPeakFlip(book, time) {
+      const current = isPeakAt(book, time)
+      const base = new Date(time)
+      const dayStart = Date.UTC(base.getUTCFullYear(), base.getUTCMonth(), base.getUTCDate())
+      const candidates = new Set()
+      for (let day = 0; day <= 21; day += 1) {
+        const midnight = dayStart + day * 86400000
+        for (const period of book?.periods ?? []) {
+          for (const window of period.windows ?? []) {
+            const start = pricingMinutes(window?.start)
+            const end = pricingMinutes(window?.end)
+            if (start !== undefined) candidates.add(midnight + start * 60000)
+            if (end !== undefined) candidates.add(midnight + end * 60000)
+          }
+          const from = Date.parse(period?.from)
+          if (Number.isFinite(from)) candidates.add(from)
+        }
+        candidates.add(midnight + 16 * 3600000)
+      }
+      for (const holiday of book?.holidays ?? []) {
+        const from = Date.parse(`${holiday?.from}T00:00:00+08:00`)
+        const to = Date.parse(`${holiday?.to}T00:00:00+08:00`)
+        if (Number.isFinite(from)) candidates.add(from)
+        if (Number.isFinite(to)) candidates.add(to + 86400000)
+      }
+      const ordered = [...candidates].filter((candidate) => candidate > time).sort((a, b) => a - b)
+      for (const candidate of ordered) {
+        if (isPeakAt(book, candidate) !== current) return candidate
+      }
+      return undefined
     }
 
     function formatDuration(t, ms) {
@@ -589,12 +669,13 @@ window.__ModuleLoader__.load({
       return value
     }
 
-    function SidebarBalance({ wide, t, readSummary, readBalance, useSessions, useWorkspaces }) {
+    function SidebarBalance({ wide, t, readSummary, readBalance, readPricing, useSessions, useWorkspaces }) {
       const [refresh, setRefresh] = React.useState(0)
       const [data, setData] = React.useState(undefined)
       const [phase, setPhase] = React.useState('loading')
       const [balance, setBalance] = React.useState(undefined)
       const [now, setNow] = React.useState(Date.now())
+      const [pricing, setPricing] = React.useState(DEFAULT_PRICING)
       // The slot contract always supplies `useSessions`; the fallback only keeps
       // an older host from failing the whole row, it just never pulls live.
       const sessionHook = typeof useSessions === 'function' ? useSessions : noSessions
@@ -606,6 +687,8 @@ window.__ModuleLoader__.load({
       readRef.current = readSummary
       const balanceReadRef = React.useRef(readBalance)
       balanceReadRef.current = readBalance
+      const pricingReadRef = React.useRef(readPricing)
+      pricingReadRef.current = readPricing
       const hasData = React.useRef(false)
       const lastCost = React.useRef(undefined)
 
@@ -687,6 +770,23 @@ window.__ModuleLoader__.load({
       }, [])
 
       React.useEffect(() => {
+        if (typeof pricingReadRef.current !== 'function') return undefined
+        const controller = new AbortController()
+        let active = true
+        pricingReadRef.current(controller.signal)
+          .then((book) => {
+            if (!active || book === null || typeof book !== 'object') return
+            if (!Array.isArray(book.periods)) return
+            setPricing(book)
+          })
+          .catch(() => {})
+        return () => {
+          active = false
+          controller.abort()
+        }
+      }, [])
+
+      React.useEffect(() => {
         const controller = new AbortController()
         let active = true
         setPhase('loading')
@@ -738,9 +838,9 @@ window.__ModuleLoader__.load({
         }
       }, [schedulePull])
 
-      const peak = isPeakTime(now)
+      const peak = isPeakAt(pricing, now)
       const modeLabel = peak ? t('modePeak') : t('modeOffPeak')
-      const nextFlip = nextPeakFlip(now)
+      const nextFlip = nextPeakFlip(pricing, now)
       const remainingText = nextFlip !== undefined ? formatDuration(t, nextFlip - now) : undefined
       const modeText = remainingText !== undefined
         ? `${modeLabel} · ${t('modeEndsIn', { duration: remainingText })}`
@@ -1010,6 +1110,21 @@ window.__ModuleLoader__.load({
           return value.balance
         }
 
+        /** The Host's validated price book; it can adopt a newer copy without a release. */
+        const readPricing = async (signal) => {
+          const response = await fetch(PRICING_ROUTE_PATH, {
+            method: 'GET',
+            headers: { accept: 'application/json' },
+            credentials: 'same-origin',
+            cache: 'no-store',
+            signal,
+          })
+          if (!response.ok) throw new Error(`spendwatch HTTP ${response.status}`)
+          const value = await response.json()
+          if (value?.ok !== true) throw new Error('spendwatch pricing failed')
+          return value.pricing
+        }
+
         const registerSlot = (name, options, Component) => {
           try {
             ctx.slots.inject(name, () => ctx.slots.register(options, Component))
@@ -1023,7 +1138,7 @@ window.__ModuleLoader__.load({
           id: 'spendwatch',
           order: 5,
           locale: NS,
-          inject: () => ({ readSummary, readBalance }),
+          inject: () => ({ readSummary, readBalance, readPricing }),
         }, guarded(SidebarBalance))
 
         registerSlot('conversation.composer.dock', {

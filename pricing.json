@@ -1,0 +1,46 @@
+{
+  "schema": 1,
+  "updated": "2026-10-29",
+  "holidays": [
+    { "from": "2026-09-25", "to": "2026-09-27" },
+    { "from": "2026-10-01", "to": "2026-10-07" }
+  ],
+  "periods": [
+    {
+      "from": "1970-01-01T00:00:00.000Z",
+      "weekdays": "all",
+      "windows": [
+        { "start": "01:00", "end": "04:00" },
+        { "start": "06:00", "end": "10:00" }
+      ],
+      "rates": {
+        "flash": {
+          "peak": { "cacheHit": 0.006, "cacheMiss": 0.3, "output": 1.2 },
+          "offPeak": { "cacheHit": 0.003, "cacheMiss": 0.15, "output": 0.6 }
+        },
+        "pro": {
+          "peak": { "cacheHit": 0.044, "cacheMiss": 1.32, "output": 3.96 },
+          "offPeak": { "cacheHit": 0.022, "cacheMiss": 0.66, "output": 1.98 }
+        }
+      }
+    },
+    {
+      "from": "2026-08-22T16:00:00.000Z",
+      "weekdays": "beijing",
+      "windows": [
+        { "start": "01:00", "end": "04:00" },
+        { "start": "06:00", "end": "10:00" }
+      ],
+      "rates": {
+        "flash": {
+          "peak": { "cacheHit": 0.006, "cacheMiss": 0.3, "output": 1.2 },
+          "offPeak": { "cacheHit": 0.003, "cacheMiss": 0.15, "output": 0.6 }
+        },
+        "pro": {
+          "peak": { "cacheHit": 0.044, "cacheMiss": 1.32, "output": 3.96 },
+          "offPeak": { "cacheHit": 0.022, "cacheMiss": 0.66, "output": 1.98 }
+        }
+      }
+    }
+  ]
+}
