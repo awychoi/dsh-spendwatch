@@ -1,16 +1,12 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="Spendwatch">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36 36" width="36" height="36" role="img" aria-label="Spendwatch: open spend gauge">
   <defs>
-    <linearGradient id="spendwatch-bg" x1="8" y1="4" x2="56" y2="60" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#3B86FF"/>
-      <stop offset="1" stop-color="#1554C7"/>
+    <linearGradient id="sb-arc" x1="7" y1="26" x2="29" y2="10" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#4D7FF3"/>
+      <stop offset=".55" stop-color="#568FE9"/>
+      <stop offset="1" stop-color="#58C7D8"/>
     </linearGradient>
   </defs>
-  <rect width="64" height="64" rx="15" fill="url(#spendwatch-bg)"/>
-  <rect x="28.4" y="11.5" width="7.2" height="4.4" rx="1.6" fill="#fff"/>
-  <path d="M42.5 25.5l3.4-3.4" stroke="#BFD8FF" stroke-width="2.6" stroke-linecap="round"/>
-  <circle cx="32" cy="36" r="14.5" fill="none" stroke="#fff" stroke-width="3.2"/>
-  <path d="M32 36V27.5" stroke="#fff" stroke-width="3.2" stroke-linecap="round"/>
-  <path d="M32 36l6 4" stroke="#BFD8FF" stroke-width="2.4" stroke-linecap="round"/>
-  <circle cx="32" cy="36" r="2.2" fill="#fff"/>
-  <path d="M32 23.5v2M44.5 36h-2M32 48.5v-2M19.5 36h2" stroke="#BFD8FF" stroke-width="1.8" stroke-linecap="round" opacity=".8"/>
+  <path d="M9.3 26.8a11.2 11.2 0 1 1 17.4 0" fill="none" stroke="url(#sb-arc)" stroke-width="2.4" stroke-linecap="round"/>
+  <path d="M18 19.8 25 14.8" fill="none" stroke="#2F6BFF" stroke-width="2.2" stroke-linecap="round"/>
+  <circle cx="18" cy="19.8" r="2.1" fill="#2F6BFF" stroke="#FFFFFF" stroke-width="1"/>
 </svg>
