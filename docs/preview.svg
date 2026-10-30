@@ -1,193 +1,160 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 700" width="1100" height="700" role="img" aria-labelledby="t">
-  <title id="t">Illustration: workspace totals in the sidebar, the balance with its peak/off-peak countdown, and the session spend under the composer</title>
-  <g font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, Helvetica, Arial, sans-serif">
-    <rect width="1100" height="700" rx="14" fill="#17181a" stroke="#26282c"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 720" width="1100" height="720" role="img" aria-labelledby="t">
+  <title id="t">Stylized illustration of Spendwatch inside DeepSeek Harness</title>
+  <defs>
+    <linearGradient id="card" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#111216"/>
+      <stop offset="1" stop-color="#0e0f12"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#3f6fd8" stop-opacity=".32"/>
+      <stop offset="100%" stop-color="#3f6fd8" stop-opacity="0"/>
+    </radialGradient>
+    <clipPath id="frame">
+      <rect x="24" y="24" width="1052" height="672" rx="18"/>
+    </clipPath>
+  </defs>
+
+  <rect width="1100" height="720" fill="#0a0b0d"/>
+  <rect x="24" y="24" width="1052" height="672" rx="18" fill="url(#card)" stroke="#23262c"/>
+
+  <g clip-path="url(#frame)" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, Helvetica, Arial, sans-serif">
     <!-- sidebar -->
-    <rect x="0.5" y="0.5" width="236" height="699" rx="14" fill="#1a1b1e"/>
-    <rect x="236" y="0" width="1" height="700" fill="#232529"/>
-    <rect y="0" width="1100" height="42" fill="#17181a"/>
-    <circle cx="20" cy="21" r="5" fill="#3a3c41"/>
-    <circle cx="36" cy="21" r="5" fill="#3a3c41"/>
-    <circle cx="52" cy="21" r="5" fill="#3a3c41"/>
-    <rect x="208" y="15" width="13" height="12" rx="2.5" fill="none" stroke="#6a6e75" stroke-width="1.2"/>
-    <line x1="214" y1="15.5" x2="214" y2="26.5" stroke="#6a6e75" stroke-width="1.2"/>
-    <line x1="0" y1="42.5" x2="1100" y2="42.5" stroke="#232529"/>
+    <rect x="24" y="24" width="240" height="672" fill="#16171b"/>
+    <rect x="264" y="24" width="1" height="672" fill="#202329"/>
 
-    <!-- logo -->
-    <rect x="16" y="56" width="20" height="20" rx="6" fill="#2b2d31"/>
-    <path d="M21 71c1.4-4.6 5-7.4 9.2-7.4-0.3 3.9-3.6 6.9-7.6 7.4" fill="none" stroke="#dfe1e5" stroke-width="1.4" stroke-linecap="round"/>
-    <text x="44" y="70" font-size="13.5" fill="#e8eaee">deepseek</text>
-    <rect x="112" y="60" width="54" height="14" rx="3" fill="#2a2c30"/>
-    <text x="119" y="70" font-size="7" letter-spacing="1.1" fill="#b9bdc4">HARNESS</text>
+    <!-- top bar -->
+    <circle cx="46" cy="48" r="3.5" fill="#2e3138"/>
+    <circle cx="58" cy="48" r="3.5" fill="#2e3138"/>
+    <circle cx="70" cy="48" r="3.5" fill="#2e3138"/>
+    <text x="292" y="52" font-size="11.5" fill="#dfe3ea">spendwatch</text>
+    <rect x="380" y="40" width="66" height="18" rx="5" fill="#1b1e23" stroke="#272a31"/>
+    <rect x="392" y="46" width="30" height="6" rx="3" fill="#3a3e46"/>
+    <rect x="972" y="40" width="16" height="16" rx="4" fill="none" stroke="#3a3e46"/>
+    <rect x="1002" y="40" width="16" height="16" rx="4" fill="none" stroke="#3a3e46"/>
+    <rect x="24" y="72" width="1052" height="1" fill="#24272d"/>
 
-    <!-- new session -->
-    <rect x="14" y="88" width="208" height="32" rx="8" fill="#232528" stroke="#303237"/>
-    <text x="118" y="108" text-anchor="middle" font-size="11.5" fill="#dfe1e5">+  New Session</text>
-
-    <!-- nav -->
-    <g fill="none" stroke="#9aa0a8" stroke-width="1.2">
-      <rect x="20" y="136" width="6" height="6" rx="1.4"/>
-      <rect x="28" y="136" width="6" height="6" rx="1.4"/>
-      <rect x="20" y="144" width="6" height="6" rx="1.4"/>
-      <rect x="28" y="144" width="6" height="6" rx="1.4"/>
-      <circle cx="26" cy="171" r="6"/>
-      <path d="M26 171v-3.4M26 171l2.4 1.6"/>
+    <!-- sidebar: brand, new session, nav -->
+    <rect x="44" y="92" width="18" height="18" rx="5" fill="#333740"/>
+    <rect x="70" y="97" width="64" height="8" rx="4" fill="#333740"/>
+    <rect x="40" y="126" width="208" height="30" rx="8" fill="#1b1d22" stroke="#272a31"/>
+    <rect x="56" y="137" width="8" height="8" rx="2" fill="#3a3e46"/>
+    <rect x="72" y="138" width="62" height="6" rx="3" fill="#3a3e46"/>
+    <g fill="#2f333b">
+      <rect x="44" y="180" width="12" height="12" rx="3"/>
+      <rect x="64" y="182" width="54" height="7" rx="3.5"/>
+      <rect x="44" y="208" width="12" height="12" rx="3"/>
+      <rect x="64" y="210" width="70" height="7" rx="3.5"/>
+      <rect x="44" y="236" width="12" height="12" rx="3"/>
+      <rect x="64" y="238" width="34" height="7" rx="3.5"/>
     </g>
-    <g fill="#9aa0a8">
-      <rect x="20" y="198" width="4" height="4" rx="1"/>
-      <rect x="26" y="198" width="4" height="4" rx="1"/>
-      <rect x="20" y="204" width="4" height="4" rx="1"/>
-      <rect x="26" y="204" width="4" height="4" rx="1"/>
-      <circle cx="32" cy="200" r="1.4"/>
-    </g>
-    <text x="44" y="146" font-size="12" fill="#b9bdc2">Plugins</text>
-    <text x="44" y="176" font-size="12" fill="#b9bdc2">Automation tasks</text>
-    <text x="44" y="206" font-size="12" fill="#b9bdc2">More</text>
+    <text x="40" y="284" font-size="8" letter-spacing="1.2" fill="#5f656f">WORKSPACES</text>
+    <circle cx="236" cy="281" r="4" fill="none" stroke="#3a3e46" stroke-width="1.2"/>
+    <line x1="239" y1="284" x2="241" y2="286" stroke="#3a3e46" stroke-width="1.2"/>
 
-    <!-- workspaces -->
-    <text x="18" y="242" font-size="10.5" letter-spacing="0.3" fill="#7d8188">Workspaces</text>
-    <g fill="none" stroke="#6a6e75" stroke-width="1.2">
-      <circle cx="204" cy="237" r="4.6"/>
-      <line x1="207.5" y1="240.5" x2="210" y2="243"/>
+    <!-- workspace rows: skeleton names + real totals -->
+    <rect x="32" y="314" width="216" height="28" rx="7" fill="#18202e"/>
+    <rect x="32" y="314" width="3" height="28" rx="1.5" fill="#4f86e8"/>
+    <g fill="none" stroke="#6b717c" stroke-width="1.2">
+      <path d="M44 300.5h5l1.4 2H56a1.4 1.4 0 0 1 1.4 1.4v6.4a1.4 1.4 0 0 1-1.4 1.4H44a1.4 1.4 0 0 1-1.4-1.4V302a1.4 1.4 0 0 1 1.4-1.4Z"/>
+      <path d="M44 328.5h5l1.4 2H56a1.4 1.4 0 0 1 1.4 1.4v6.4a1.4 1.4 0 0 1-1.4 1.4H44a1.4 1.4 0 0 1-1.4-1.4V330a1.4 1.4 0 0 1 1.4-1.4Z"/>
+      <path d="M44 356.5h5l1.4 2H56a1.4 1.4 0 0 1 1.4 1.4v6.4a1.4 1.4 0 0 1-1.4 1.4H44a1.4 1.4 0 0 1-1.4-1.4V358a1.4 1.4 0 0 1 1.4-1.4Z"/>
+      <path d="M44 384.5h5l1.4 2H56a1.4 1.4 0 0 1 1.4 1.4v6.4a1.4 1.4 0 0 1-1.4 1.4H44a1.4 1.4 0 0 1-1.4-1.4V386a1.4 1.4 0 0 1 1.4-1.4Z"/>
+      <path d="M44 412.5h5l1.4 2H56a1.4 1.4 0 0 1 1.4 1.4v6.4a1.4 1.4 0 0 1-1.4 1.4H44a1.4 1.4 0 0 1-1.4-1.4V414a1.4 1.4 0 0 1 1.4-1.4Z"/>
     </g>
-    <text x="224" y="242" font-size="12" fill="#6a6e75">+</text>
-
-    <!-- rows -->
-    <g fill="none" stroke="#7c8087" stroke-width="1.2">
-      <g transform="translate(20,258.5)"><path d="M1 2.5C1 1.7 1.7 1 2.5 1h3.2l1.4 1.8h4.4c.8 0 1.5.7 1.5 1.5v5.2c0 .8-.7 1.5-1.5 1.5H2.5C1.7 11 1 10.3 1 9.5V2.5Z"/></g>
-      <g transform="translate(20,286.5)"><path d="M1 2.5C1 1.7 1.7 1 2.5 1h3.2l1.4 1.8h4.4c.8 0 1.5.7 1.5 1.5v5.2c0 .8-.7 1.5-1.5 1.5H2.5C1.7 11 1 10.3 1 9.5V2.5Z"/></g>
-      <g transform="translate(20,314.5)"><path d="M1 2.5C1 1.7 1.7 1 2.5 1h3.2l1.4 1.8h4.4c.8 0 1.5.7 1.5 1.5v5.2c0 .8-.7 1.5-1.5 1.5H2.5C1.7 11 1 10.3 1 9.5V2.5Z"/></g>
-      <g transform="translate(20,342.5)"><path d="M1 2.5C1 1.7 1.7 1 2.5 1h3.2l1.4 1.8h4.4c.8 0 1.5.7 1.5 1.5v5.2c0 .8-.7 1.5-1.5 1.5H2.5C1.7 11 1 10.3 1 9.5V2.5Z"/></g>
-      <g transform="translate(42,370.5)"><path d="M1 2.5C1 1.7 1.7 1 2.5 1h3.2l1.4 1.8h4.4c.8 0 1.5.7 1.5 1.5v5.2c0 .8-.7 1.5-1.5 1.5H2.5C1.7 11 1 10.3 1 9.5V2.5Z"/></g>
-      <g transform="translate(20,398.5)"><path d="M1 2.5C1 1.7 1.7 1 2.5 1h3.2l1.4 1.8h4.4c.8 0 1.5.7 1.5 1.5v5.2c0 .8-.7 1.5-1.5 1.5H2.5C1.7 11 1 10.3 1 9.5V2.5Z"/></g>
-      <g transform="translate(20,426.5)"><path d="M1 2.5C1 1.7 1.7 1 2.5 1h3.2l1.4 1.8h4.4c.8 0 1.5.7 1.5 1.5v5.2c0 .8-.7 1.5-1.5 1.5H2.5C1.7 11 1 10.3 1 9.5V2.5Z"/></g>
-      <g transform="translate(20,454.5)"><path d="M1 2.5C1 1.7 1.7 1 2.5 1h3.2l1.4 1.8h4.4c.8 0 1.5.7 1.5 1.5v5.2c0 .8-.7 1.5-1.5 1.5H2.5C1.7 11 1 10.3 1 9.5V2.5Z"/></g>
-      <g transform="translate(20,482.5)"><path d="M1 2.5C1 1.7 1.7 1 2.5 1h3.2l1.4 1.8h4.4c.8 0 1.5.7 1.5 1.5v5.2c0 .8-.7 1.5-1.5 1.5H2.5C1.7 11 1 10.3 1 9.5V2.5Z"/></g>
-      <g transform="translate(20,538.5)"><path d="M1 2.5C1 1.7 1.7 1 2.5 1h3.2l1.4 1.8h4.4c.8 0 1.5.7 1.5 1.5v5.2c0 .8-.7 1.5-1.5 1.5H2.5C1.7 11 1 10.3 1 9.5V2.5Z"/></g>
+    <g fill="#2f333b">
+      <rect x="64" y="298" width="72" height="7" rx="3.5"/>
+      <rect x="64" y="326" width="92" height="7" rx="3.5" fill="#2e3a50"/>
+      <rect x="64" y="354" width="58" height="7" rx="3.5"/>
+      <rect x="64" y="382" width="82" height="7" rx="3.5"/>
+      <rect x="64" y="410" width="48" height="7" rx="3.5"/>
+      <rect x="64" y="440" width="104" height="6" rx="3"/>
     </g>
-    <rect x="8" y="307" width="220" height="26" rx="7" fill="#26282c"/>
-    <text x="42" y="268" font-size="12" fill="#b9bdc2">projects</text>
-    <text x="224" y="268" font-size="11" text-anchor="end" fill="#9aa3ae">~$1.28</text>
-    <text x="42" y="296" font-size="12" fill="#b9bdc2">dsh-extensions</text>
-    <text x="224" y="296" font-size="11" text-anchor="end" fill="#9aa3ae">~$4.60</text>
-    <text x="42" y="324" font-size="12" fill="#e6e8eb">spendwatch</text>
-    <text x="42" y="352" font-size="12" fill="#b9bdc2">notes</text>
-    <text x="224" y="352" font-size="11" text-anchor="end" fill="#9aa3ae">~$0.92</text>
-    <text x="64" y="380" font-size="12" fill="#b9bdc2">research</text>
-    <text x="42" y="408" font-size="12" fill="#b9bdc2">docs pass</text>
-    <text x="42" y="436" font-size="12" fill="#b9bdc2">copy edits</text>
-    <text x="42" y="464" font-size="12" fill="#b9bdc2">integration</text>
-    <text x="42" y="492" font-size="12" fill="#b9bdc2">release prep</text>
-    <text x="42" y="548" font-size="12" fill="#b9bdc2">Default workspace</text>
-    <text x="224" y="548" font-size="11" text-anchor="end" fill="#9aa3ae">~$0.12</text>
-    <text x="18" y="520" font-size="10.5" fill="#7d8188">Show 8 more sessions</text>
-    <text x="224" y="324" font-size="10.5" text-anchor="end" fill="#6f737a">8min</text>
-    <text x="224" y="380" font-size="10.5" text-anchor="end" fill="#6f737a">35min</text>
-    <text x="224" y="408" font-size="10.5" text-anchor="end" fill="#6f737a">1h</text>
-    <text x="224" y="436" font-size="10.5" text-anchor="end" fill="#6f737a">2h</text>
-    <text x="224" y="464" font-size="10.5" text-anchor="end" fill="#6f737a">4h</text>
-    <text x="224" y="492" font-size="10.5" text-anchor="end" fill="#6f737a">23h</text>
+    <g font-size="10" text-anchor="end" font-variant-numeric="tabular-nums">
+      <text x="240" y="304" fill="#9db6df">~$1.28</text>
+      <text x="240" y="332" fill="#b7d0f5">~$4.60</text>
+      <text x="240" y="360" fill="#9db6df">~$0.92</text>
+      <text x="240" y="388" fill="#9db6df">~$0.12</text>
+    </g>
 
-    <!-- sidebar foot: the Balance row -->
-    <line x1="16" y1="592" x2="220" y2="592" stroke="#232529"/>
-    <g transform="translate(20,622)" fill="none" stroke="#c7cbd2" stroke-width="1.3">
+    <!-- balance card -->
+    <ellipse cx="140" cy="600" rx="150" ry="90" fill="url(#glow)"/>
+    <rect x="36" y="566" width="212" height="62" rx="10" fill="#152036" stroke="#35547f"/>
+    <g transform="translate(50,580)" fill="none" stroke="#a7c1ea" stroke-width="1.3">
       <path d="M2.5 5.25c0-.97.78-1.75 1.75-1.75H12c.97 0 1.75.78 1.75 1.75v6.5c0 .97-.78 1.75-1.75 1.75H4.25c-.97 0-1.75-.78-1.75-1.75v-6.5Z"/>
-      <path d="M2.5 5.75h11.25" stroke-linecap="round" opacity="0.65"/>
+      <path d="M2.5 5.75h11.25" stroke-linecap="round" opacity=".65"/>
       <path d="M9.25 8h4.5v3h-4.5a1.5 1.5 0 0 1 0-3Z" stroke-linejoin="round"/>
-      <circle cx="11.5" cy="9.5" r="0.7" fill="#c7cbd2" stroke="none"/>
     </g>
-    <text x="44" y="630" font-size="12.5" fill="#dfe1e5">Balance</text>
-    <text x="220" y="630" font-size="12" text-anchor="end" fill="#8b8f96">$10.64</text>
-    <circle cx="46" cy="640" r="3" fill="#55a06d"/>
-    <text x="56" y="644" font-size="10.5" fill="#9aa3ae">Off-peak · ends in 2h 22m</text>
-    <circle cx="22" cy="666" r="1.2" fill="#6a6e75"/>
-    <circle cx="27" cy="666" r="1.2" fill="#6a6e75"/>
-    <circle cx="32" cy="666" r="1.2" fill="#6a6e75"/>
-    <text x="44" y="670" font-size="12.5" fill="#8b8f96">More</text>
+    <text x="74" y="590" font-size="11" fill="#e6e9ef">Balance</text>
+    <text x="236" y="590" font-size="12" text-anchor="end" fill="#e2e8f2" font-variant-numeric="tabular-nums">$10.64</text>
+    <circle cx="51" cy="606" r="3" fill="#55a06d"/>
+    <text x="59" y="609" font-size="9.5" fill="#a2aebf">Off-peak · ends in 2h 22m</text>
+
+    <!-- more -->
+    <g fill="#333740">
+      <circle cx="52" cy="654" r="1.3"/>
+      <circle cx="57" cy="654" r="1.3"/>
+      <circle cx="62" cy="654" r="1.3"/>
+      <rect x="72" y="650" width="34" height="7" rx="3.5"/>
+    </g>
 
     <!-- main header -->
-    <text x="310" y="26" font-size="13" fill="#d9dbe0">spendwatch</text>
-    <rect x="394" y="11" width="106" height="20" rx="5" fill="#232528" stroke="#2c2e33"/>
-    <circle cx="406" cy="21" r="3.4" fill="none" stroke="#9aa0a8" stroke-width="1.2"/>
-    <text x="416" y="25" font-size="10.5" fill="#9aa0a8">Standard mode</text>
-    <rect x="1000" y="14" width="14" height="14" rx="3" fill="none" stroke="#6a6e75" stroke-width="1.2"/>
-    <text x="1046" y="26" font-size="13" text-anchor="end" fill="#6a6e75">···</text>
+    <g>
+      <text x="292" y="98" font-size="11" fill="#e3e7ee">Chat</text>
+      <rect x="292" y="106" width="22" height="2" rx="1" fill="#4f86e8"/>
+      <rect x="330" y="94" width="42" height="7" rx="3.5" fill="#2f333b"/>
+      <rect x="386" y="94" width="18" height="7" rx="3.5" fill="#2f333b"/>
+      <rect x="292" y="112" width="728" height="1" fill="#24272d"/>
+    </g>
 
-    <!-- tabs -->
-    <text x="310" y="60" font-size="12.5" fill="#e6e8eb">Chat</text>
-    <rect x="310" y="66" width="26" height="2" rx="1" fill="#6ea8fe"/>
-    <text x="356" y="60" font-size="12.5" fill="#8b8f96">Trajectory</text>
-    <text x="424" y="60" font-size="12" fill="#6a6e75">···</text>
-    <line x1="236" y1="70.5" x2="1100" y2="70.5" stroke="#232529"/>
-
-    <!-- transcript -->
-    <rect x="310" y="84" width="730" height="28" rx="8" fill="#1e2023" stroke="#26282c"/>
-    <text x="324" y="102" font-size="9.5" fill="#8b8f96">bash</text>
-    <g stroke="#6a6e75" fill="none" stroke-width="1.2">
-      <rect x="1018" y="93" width="9" height="10" rx="1.6"/>
-      <rect x="1022" y="97" width="9" height="10" rx="1.6" fill="#1e2023"/>
+    <!-- transcript skeleton -->
+    <rect x="700" y="140" width="260" height="30" rx="9" fill="#22252c"/>
+    <g fill="#2f333b">
+      <rect x="292" y="186" width="520" height="7" rx="3.5"/>
+      <rect x="292" y="200" width="460" height="7" rx="3.5"/>
+      <rect x="292" y="214" width="380" height="7" rx="3.5"/>
     </g>
-    <text x="310" y="158" font-size="12.5" fill="#d7d9dd">Quick check before I tag the release:</text>
-    <rect x="310" y="174" width="730" height="82" rx="8" fill="#1e2023" stroke="#26282c"/>
-    <text x="324" y="193" font-size="9.5" fill="#8b8f96">bash</text>
-    <g stroke="#6a6e75" fill="none" stroke-width="1.2">
-      <rect x="1018" y="184" width="9" height="10" rx="1.6"/>
-      <rect x="1022" y="188" width="9" height="10" rx="1.6" fill="#1e2023"/>
+    <rect x="292" y="238" width="660" height="100" rx="10" fill="#191b20" stroke="#2d3038"/>
+    <rect x="308" y="254" width="26" height="6" rx="3" fill="#333740"/>
+    <g fill="#333740">
+      <rect x="308" y="278" width="500" height="6" rx="3"/>
+      <rect x="308" y="294" width="450" height="6" rx="3"/>
+      <rect x="308" y="310" width="360" height="6" rx="3"/>
     </g>
-    <line x1="310" y1="202" x2="1040" y2="202" stroke="#26282c"/>
-    <g font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="10.5">
-      <text x="324" y="220" fill="#9ecb8f">gh repo edit awychoi/dsh-spendwatch \</text>
-      <text x="324" y="238" fill="#a9adb4">  --description "Live DeepSeek balance and conversation spend" \</text>
-      <text x="324" y="256" fill="#a9adb4">  --add-topic dsh-plugin --add-topic deepseek --add-topic deepseek-harness</text>
+    <g fill="#2f333b">
+      <rect x="292" y="360" width="450" height="7" rx="3.5"/>
+      <rect x="292" y="374" width="370" height="7" rx="3.5"/>
     </g>
-    <text x="310" y="320" font-size="14" fill="#e6e8eb">What the update covers</text>
-    <g font-size="12" fill="#b9bdc4">
-      <circle cx="314" cy="341" r="1.6" fill="#6a6e75"/>
-      <text x="324" y="345">Peak pricing runs 01:00–04:00 and 06:00–10:00 UTC on weekdays.</text>
-      <circle cx="314" cy="367" r="1.6" fill="#6a6e75"/>
-      <text x="324" y="371">Workspace totals include archived sessions.</text>
-      <circle cx="314" cy="393" r="1.6" fill="#6a6e75"/>
-      <text x="324" y="397">Subagents count toward this session’s total.</text>
-      <circle cx="314" cy="419" r="1.6" fill="#6a6e75"/>
-      <text x="324" y="423">The balance refreshes whenever a session spends more.</text>
-    </g>
+    <rect x="700" y="400" width="260" height="30" rx="9" fill="#22252c"/>
 
     <!-- composer -->
-    <rect x="310" y="520" width="730" height="92" rx="16" fill="#1e2023" stroke="#2c2e33"/>
-    <text x="330" y="552" font-size="12.5" fill="#7c8087">Message or run a task, / commands, @ files or sessions</text>
-    <circle cx="330" cy="586" r="9" fill="none" stroke="#4a4d53" stroke-width="1.2"/>
-    <path d="M330 582v8M326 586h8" stroke="#8b8f96" stroke-width="1.3" stroke-linecap="round"/>
-    <rect x="348" y="576" width="106" height="20" rx="6" fill="#26282c"/>
-    <circle cx="360" cy="586" r="3.6" fill="none" stroke="#9aa0a8" stroke-width="1.1"/>
-    <text x="370" y="590" font-size="10" fill="#b9bdc4">Workspace Write</text>
-    <rect x="806" y="576" width="120" height="20" rx="6" fill="#26282c"/>
-    <text x="816" y="590" font-size="10" fill="#b9bdc4">DeepSeek-V4.1-Flash</text>
-    <rect x="932" y="576" width="30" height="20" rx="6" fill="#26282c"/>
-    <text x="947" y="590" font-size="10" text-anchor="middle" fill="#8b8f96">1017</text>
-    <rect x="968" y="576" width="30" height="20" rx="6" fill="#26282c"/>
-    <text x="983" y="590" font-size="10" text-anchor="middle" fill="#8b8f96">Max</text>
-    <circle cx="1016" cy="586" r="13" fill="#2f6fd0"/>
-    <path d="M1016 592v-11M1011.5 585.5l4.5-4.5 4.5 4.5" fill="none" stroke="#e8f0ff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <rect x="292" y="548" width="728" height="84" rx="12" fill="#191b20" stroke="#2d3038"/>
+    <rect x="314" y="574" width="240" height="8" rx="4" fill="#333740"/>
+    <circle cx="314" cy="600" r="7" fill="none" stroke="#4a4f57" stroke-width="1.2"/>
+    <path d="M314 597v6M311 600h6" stroke="#4a4f57" stroke-width="1.2" stroke-linecap="round"/>
+    <rect x="330" y="590" width="78" height="18" rx="5" fill="#262a31"/>
+    <rect x="340" y="596" width="50" height="6" rx="3" fill="#3a3e46"/>
+    <rect x="900" y="590" width="80" height="18" rx="5" fill="#262a31"/>
+    <rect x="910" y="596" width="52" height="6" rx="3" fill="#3a3e46"/>
+    <circle cx="1004" cy="600" r="13" fill="#3f6fd8"/>
+    <path d="M1004 606v-11M999.5 599.5l4.5-4.5 4.5 4.5" fill="none" stroke="#eaf1ff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
 
-    <!-- dock: the session pill -->
-    <g font-size="11" fill="#7c8087">
-      <g stroke="#7c8087" fill="none" stroke-width="1.2">
-        <path d="M316 646v8M323 650v4M330 647v7"/>
-        <ellipse cx="548" cy="648" rx="6" ry="2.4"/>
-        <path d="M542 648v6c0 1.3 2.7 2.4 6 2.4s6-1.1 6-2.4v-6"/>
-      </g>
-      <text x="342" y="656">6 turns 84 steps · 120 tok/s</text>
-      <text x="564" y="656">12.4M tok · Cache hit 98.2%</text>
+    <!-- dock: session pill -->
+    <ellipse cx="860" cy="660" rx="130" ry="46" fill="url(#glow)"/>
+    <g fill="#2f333b">
+      <rect x="298" y="654" width="10" height="8" rx="2"/>
+      <rect x="312" y="652" width="100" height="7" rx="3.5"/>
+      <rect x="500" y="652" width="12" height="8" rx="2"/>
+      <rect x="520" y="652" width="92" height="7" rx="3.5"/>
     </g>
-    <g transform="translate(790,648)" fill="none" stroke="#9aa0a8" stroke-width="1.2">
+    <rect x="760" y="646" width="190" height="26" rx="8" fill="#1a2c4b" stroke="#3d6197"/>
+    <g transform="translate(770,652) scale(0.875)" fill="none" stroke="#c2d6f2" stroke-width="1.4">
       <path d="M2.5 5.25c0-.97.78-1.75 1.75-1.75H12c.97 0 1.75.78 1.75 1.75v6.5c0 .97-.78 1.75-1.75 1.75H4.25c-.97 0-1.75-.78-1.75-1.75v-6.5Z"/>
-      <path d="M2.5 5.75h11.25" stroke-linecap="round" opacity="0.65"/>
+      <path d="M2.5 5.75h11.25" stroke-linecap="round" opacity=".65"/>
       <path d="M9.25 8h4.5v3h-4.5a1.5 1.5 0 0 1 0-3Z" stroke-linejoin="round"/>
-      <circle cx="11.5" cy="9.5" r="0.7" fill="#9aa0a8" stroke="none"/>
     </g>
-    <text x="808" y="656" font-size="11.5" fill="#a9adb4">~$0.37 this session</text>
-    <circle cx="968" cy="652" r="7" fill="none" stroke="#34373c" stroke-width="2.4"/>
-    <path d="M968 645a7 7 0 0 1 6.1 3.6" fill="none" stroke="#6ea8fe" stroke-width="2.4" stroke-linecap="round"/>
-    <text x="982" y="656" font-size="11" fill="#7c8087">18%</text>
+    <text x="790" y="662" font-size="10.5" fill="#c9d8f0">~$0.37 this session</text>
+    <circle cx="984" cy="659" r="8" fill="none" stroke="#2f333a" stroke-width="2.4"/>
+    <path d="M984 651a8 8 0 0 1 6.9 4" fill="none" stroke="#4f86e8" stroke-width="2.4" stroke-linecap="round"/>
+    <text x="1000" y="662" font-size="9" fill="#6c727c">18%</text>
   </g>
 </svg>
