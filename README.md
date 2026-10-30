@@ -10,9 +10,9 @@ Spendwatch is an add-on for **DeepSeek Harness (DSH)**. Once installed, it puts 
 
 They move on their own while you work, so you can watch the wallet drain without keeping the DeepSeek platform open in another tab.
 
-![Spendwatch highlighted in DeepSeek Harness: the Balance row in the sidebar and the session spend in the composer dock](docs/screenshot.png)
+![Vector illustration of Spendwatch inside DeepSeek Harness: workspace totals in the sidebar, the balance with its peak/off-peak countdown, and the session spend under the composer](docs/preview.svg)
 
-*Highlighted: your balance on the left, and this session’s spend on the right. The workspace totals and the peak/off-peak line are described below.*
+*Vector illustration (not a screenshot) of the three outputs: workspace totals in the sidebar, the balance with its pricing countdown, and this session’s spend.*
 
 ## Where things are
 
