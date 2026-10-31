@@ -1,8 +1,4 @@
-<p align="center">
-  <img src="icon.svg" width="88" height="88" alt="Spendwatch plugin icon">
-</p>
-
-# Spendwatch
+# <img src="icon.svg" width="36" height="36" alt="" align="middle"> Spendwatch
 
 **A DeepSeek Harness plugin that keeps your DeepSeek balance and what each conversation costs in view.**
 
