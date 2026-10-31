@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 36 36" width="36" height="36" role="img" aria-label="Spendwatch">
+  <path d="M9.3 26.8a11.2 11.2 0 1 1 17.4 0" fill="none" stroke="#FFFFFF" stroke-width="2.4" stroke-linecap="round"/>
+  <path d="M18 19.8 25 14.8" fill="none" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round"/>
+  <circle cx="18" cy="19.8" r="2.1" fill="#FFFFFF"/>
+</svg>

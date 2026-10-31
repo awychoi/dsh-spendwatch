@@ -117,5 +117,8 @@ Not affiliated with DeepSeek.
 | `cordis.patch.yml` | Registers the bundle in a DSH profile |
 | `locale/en.json`, `locale/zh.json` | Plugin-manager title and description |
 | `icon.svg` | Plugin icon |
+| `icon-white.svg` | Solid-white website icon for dark backgrounds; exported as `./icon-white` |
+
+Both icons are transparent SVGs. `icon-white.svg` is a single-color mark for dark backgrounds and is not used by the plugin manager.
 
 </details>
