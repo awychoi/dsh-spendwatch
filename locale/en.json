@@ -1,6 +1,6 @@
 {
   "meta": {
     "title": "Spendwatch",
-    "description": "Live DeepSeek balance in the sidebar and conversation spend below the composer."
+    "description": "Live DeepSeek balance, conversation spend, and per-workspace totals in the DSH sidebar."
   }
 }

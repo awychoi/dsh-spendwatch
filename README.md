@@ -1,10 +1,13 @@
 # <img src="icon.svg" width="36" height="36" alt="" align="absmiddle"> Spendwatch
 
-**A DeepSeek Harness plugin that keeps your DeepSeek balance and what each conversation costs in view.**
+**A DeepSeek Harness plugin that keeps your DeepSeek balance, what each
+conversation costs, and what each workspace has spent in view.**
 
-Spendwatch puts the wallet, workspace totals, and current-conversation spend
-where you are already looking. It reads the same DeepSeek account DSH uses, so
-there is no extra login or settings screen.
+Spendwatch puts your wallet, the current conversation, and every workspace in
+view at once. Workspace totals are the unusual part: they roll up all of a
+workspace's sessions, archived ones included, not just the conversation you have
+open. It reads the same DeepSeek account DSH uses, so there is no extra login or
+settings screen.
 
 ![Stylized vector illustration of Spendwatch inside DeepSeek Harness: workspace totals in the sidebar, the balance with its peak/off-peak countdown, and the session spend under the composer](docs/preview.svg)
 
@@ -12,7 +15,8 @@ there is no extra login or settings screen.
 
 - **Your balance** in the left sidebar, with a live peak / off-peak marker and
   a countdown to the next pricing flip.
-- **Workspace totals** on each workspace row, archived sessions included.
+- **Workspace totals** on each workspace row: every session in that workspace,
+  archived ones included.
 - **Conversation spend** in a pill under the message box, subagents included.
 
 ## How it stays current

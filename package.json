@@ -3,7 +3,7 @@
   "version": "1.5.0",
   "private": true,
   "type": "module",
-  "description": "Spendwatch \u2014 live DeepSeek balance and conversation spend for DeepSeek Harness",
+  "description": "Spendwatch — live DeepSeek balance, per-conversation spend, and per-workspace totals for DeepSeek Harness",
   "author": "awychoi",
   "license": "PolyForm-Noncommercial-1.0.0",
   "homepage": "https://github.com/awychoi/dsh-spendwatch#readme",
@@ -19,7 +19,9 @@
     "balance",
     "spend",
     "cost",
-    "wallet"
+    "wallet",
+    "workspace",
+    "workspace-spend"
   ],
   "exports": {
     ".": "./index.js",
