@@ -35,8 +35,14 @@ public holidays.
 
 - The **balance** is the real wallet value last returned by DeepSeek.
 - The **spend** is an estimate: tokens × published list prices, including
-  peak/off-peak and cache-hit/miss rates. Unpriced models are skipped, and
-  Search/Fetch per-request fees are not modelled.
+  peak/off-peak and cache-hit/miss rates. Unpriced models are skipped. Native
+  search runs as an auxiliary model turn; the session log records the request
+  but not its usage, so the Host estimates `search.estimatedInputTokens` +
+  `search.estimatedOutputTokens` per request at the search model's rates. That
+  estimate is approximate and tunable in `pricing.json`. The Search/Fetch APIs
+  bill $0.75 per 1K successful requests, but this profile uses Messages search
+  and local HTTP fetch, so that fee is not incurred. The search count includes
+  requests that later failed.
 - Chinese public holidays are covered through 2026; add the 2027 dates when they
   are announced.
 - Do not reconcile an invoice with Spendwatch. DeepSeek's ledger can settle
@@ -48,6 +54,13 @@ Built against DSH 0.2.x; the host-coupling notes below are the parts most likely
 
 - **Fork accounting:** the Host fold skips events below a session's
   `inheritedEventCount`, so inherited history is not billed twice.
+- **Search accounting:** every `web/deepseek-search-llm-request` event (one per
+  query) adds one to `searchRequests` and prices the period's estimated search
+  tokens (`search.estimatedInputTokens` / `estimatedOutputTokens`) at the search
+  model's rates. The estimate comes from observed request/result sizes; the
+  real auxiliary usage is not logged. The Search/Fetch APIs' $0.75/1K
+  per-successful-request billing is not modelled because this profile uses
+  Messages search and local HTTP fetch, which produce no API request events.
 - **Host coupling:** DSH has no per-workspace slot, so workspace totals attach
   to the shipped row through `data-row-key="workspace:<id>"`; the wallet row
   sits above the footer action through a scoped `:has()` wrap. If either host
@@ -58,8 +71,8 @@ Built against DSH 0.2.x; the host-coupling notes below are the parts most likely
   badges, and no `deepseekAccount` falls back to `DEEPSEEK_API_KEY`.
 - **Pricing book:** the Host validates `pricing.json` at startup and serves it
   to the Client, falling back to the bundled copy if the file is malformed or
-  missing. To update rates or holidays, add a period with its effective `from`
-  instant and restart DSH.
+  missing. To update token rates, search token estimates, or holidays, add a
+  period with its effective `from` instant and restart DSH.
 
 ## Install
 

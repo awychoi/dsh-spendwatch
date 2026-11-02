@@ -13,7 +13,7 @@ const ROUTE_PATH = '/plugins/spendwatch/summary'
 const BALANCE_ROUTE_PATH = '/plugins/spendwatch/balance'
 const PRICING_ROUTE_PATH = '/plugins/spendwatch/pricing'
 const CACHE_MS = 15_000
-const DEFAULT_CLIENT_VERSION = '1.5.0'
+const DEFAULT_CLIENT_VERSION = '1.6.0'
 const BALANCE_ENDPOINT = 'https://api.deepseek.com/user/balance'
 
 /**
@@ -58,6 +58,8 @@ const FALLBACK_BOOK = {
           offPeak: { cacheHit: 0.022, cacheMiss: 0.66, output: 1.98 },
         },
       },
+      searchInputTokens: 100,
+      searchOutputTokens: 270,
     },
   ],
 }
@@ -119,7 +121,22 @@ function normalizePricing(value) {
       if (peak === undefined || offPeak === undefined) return undefined
       rates[family] = { peak, offPeak }
     }
-    periods.push({ from, weekdays: period.weekdays, windows, rates })
+    const searchInput = period.search?.estimatedInputTokens
+    const searchOutput = period.search?.estimatedOutputTokens
+    const searchInputTokens = typeof searchInput === 'number' && Number.isFinite(searchInput) && searchInput >= 0
+      ? searchInput
+      : 0
+    const searchOutputTokens = typeof searchOutput === 'number' && Number.isFinite(searchOutput) && searchOutput >= 0
+      ? searchOutput
+      : 0
+    periods.push({
+      from,
+      weekdays: period.weekdays,
+      windows,
+      rates,
+      searchInputTokens,
+      searchOutputTokens,
+    })
   }
   periods.sort((left, right) => left.from - right.from)
 
@@ -225,6 +242,7 @@ const NUMERIC_FIELDS = [
   'cacheWriteTokens',
   'messages',
   'unpricedMessages',
+  'searchRequests',
 ]
 
 function isNonNegativeNumber(value) {
@@ -270,6 +288,7 @@ function emptySpend(_header, inheritedEventCount) {
     cacheWriteTokens: 0,
     messages: 0,
     unpricedMessages: 0,
+    searchRequests: 0,
     inheritedEventCount: Number.isSafeInteger(inherited) && inherited > 0 ? inherited : 0,
   }
 }
@@ -280,6 +299,23 @@ function finiteUsage(value) {
 
 function applySpend(state, event) {
   if (Number(event?.seq) < state.inheritedEventCount) return state
+  if (event?.type === 'web/deepseek-search-llm-request') {
+    // Native search is an auxiliary model turn; the session log records the
+    // request but not its usage. Approximate that turn with the period's token
+    // estimate at the search model's rates.
+    const period = periodAt(event.time)
+    const model = event.data?.body?.model
+    const price = priceFor(typeof model === 'string' ? model : 'deepseek-flash', event.time)
+      ?? priceFor('deepseek-flash', event.time)
+    const costUsd = price === undefined
+      ? 0
+      : (period.searchInputTokens * price.cacheMiss + period.searchOutputTokens * price.output) / 1_000_000
+    return {
+      ...state,
+      costUsd: state.costUsd + costUsd,
+      searchRequests: state.searchRequests + 1,
+    }
+  }
   if (event?.type !== 'assistant/message') return state
   const usage = event.data?.usage
   if (usage === null || typeof usage !== 'object') return state
@@ -300,6 +336,7 @@ function applySpend(state, event) {
     cacheWriteTokens: state.cacheWriteTokens + priced.cacheWriteTokens,
     messages: state.messages + 1,
     unpricedMessages: state.unpricedMessages,
+    searchRequests: state.searchRequests,
     inheritedEventCount: state.inheritedEventCount,
   }
 }
@@ -313,13 +350,14 @@ function viewSpend(state) {
     cacheWriteTokens: state.cacheWriteTokens,
     messages: state.messages,
     unpricedMessages: state.unpricedMessages,
+    searchRequests: state.searchRequests,
   }
 }
 
 /** Client-visible projection consumed through the normal Session projection seam. */
 const deepseekSpendProjection = {
   key: 'deepseekSpend',
-  stateVersion: 3,
+  stateVersion: 5,
   stateSchema: spendSchema,
   init: emptySpend,
   apply: applySpend,
@@ -426,6 +464,7 @@ async function computeSpend(ctx) {
   let failedSessions = 0
   let messages = 0
   let unpricedMessages = 0
+  let searchRequests = 0
   let inputTokens = 0
   let outputTokens = 0
   let cacheReadTokens = 0
@@ -446,6 +485,7 @@ async function computeSpend(ctx) {
       totalUsd += value.costUsd
       messages += value.messages
       unpricedMessages += value.unpricedMessages
+      searchRequests += isNonNegativeNumber(value.searchRequests) ? value.searchRequests : 0
       inputTokens += value.inputTokens
       outputTokens += value.outputTokens
       cacheReadTokens += value.cacheReadTokens
@@ -477,6 +517,7 @@ async function computeSpend(ctx) {
     failedSessions,
     messages,
     unpricedMessages,
+    searchRequests,
     inputTokens,
     outputTokens,
     cacheReadTokens,

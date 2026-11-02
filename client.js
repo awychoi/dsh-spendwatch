@@ -7,8 +7,8 @@ window.__ModuleLoader__.load({
     const NS = 'spendwatch'
     const ROUTE_PATH = '/plugins/spendwatch/summary'
     const BALANCE_ROUTE_PATH = '/plugins/spendwatch/balance'
-const PRICING_ROUTE_PATH = '/plugins/spendwatch/pricing'
-    const CLIENT_VERSION = '1.5.0'
+    const PRICING_ROUTE_PATH = '/plugins/spendwatch/pricing'
+    const CLIENT_VERSION = '1.6.0'
     /** Coalesce same-tick updates (one turn can commit several Sessions' frames together). */
     const PULL_DEBOUNCE_MS = 200
     /** Minimum gap before a queued follow-up pull, so one turn cannot stampede the wallet API. */
@@ -72,6 +72,7 @@ const PRICING_ROUTE_PATH = '/plugins/spendwatch/pricing'
       sessionTitleOneSubagent: 'This session with 1 subagent: {total} ({own} without it). Estimated at current DeepSeek list prices.',
       sessionTitleUnavailable: 'This session’s estimated spend is not available yet.',
       unpriced: '{count} model calls used an unpriced model and are excluded.',
+      sidebarSearchRequests: 'Includes {count} web searches.',
       partial: '{count} sessions could not be read and are excluded.',
     }
 
@@ -100,6 +101,7 @@ const PRICING_ROUTE_PATH = '/plugins/spendwatch/pricing'
       sessionTitleOneSubagent: '本次会话含 1 个子代理：{total}（不含子代理 {own}）。按 DeepSeek 当前列表价估算。',
       sessionTitleUnavailable: '本次会话花费暂不可用。',
       unpriced: '有 {count} 次模型调用使用了未定价模型，未计入估算。',
+      sidebarSearchRequests: '含 {count} 次网页搜索。',
       partial: '有 {count} 个会话无法读取，未计入。',
     }
 
@@ -885,6 +887,7 @@ const PRICING_ROUTE_PATH = '/plugins/spendwatch/pricing'
       if (data !== undefined && phase === 'loading') details.push(t('sidebarTitleRefreshing'))
       else if (data !== undefined && phase === 'error') details.push(t('sidebarTitleStale'))
       if (spend?.unpricedMessages > 0) details.push(t('unpriced', { count: spend.unpricedMessages }))
+      if (spend?.searchRequests > 0) details.push(t('sidebarSearchRequests', { count: spend.searchRequests }))
       if (spend?.failedSessions > 0) details.push(t('partial', { count: spend.failedSessions }))
       const title = data === undefined
         ? [
