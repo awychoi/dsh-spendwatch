@@ -5,7 +5,7 @@
   "type": "module",
   "description": "Spendwatch — live DeepSeek balance, per-conversation spend, and per-workspace totals for DeepSeek Harness",
   "author": "awychoi",
-  "license": "PolyForm-Noncommercial-1.0.0",
+  "license": "MIT",
   "homepage": "https://github.com/awychoi/dsh-spendwatch#readme",
   "repository": {
     "type": "git",

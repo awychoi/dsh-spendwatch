@@ -97,10 +97,7 @@ mark for dark backgrounds. Exported as `./icon` and `./icon-white`.
 
 ## License
 
-[PolyForm Noncommercial License 1.0.0](LICENSE) — free to use, change, and share
-for **non-commercial purposes only**. The software comes as-is, with no warranty
-and no liability, to the extent the law allows.
-
+[MIT](LICENSE) — free to use, change, and share, including commercially.
 Copyright © 2026 [awychoi](https://github.com/awychoi).
 
 Not affiliated with DeepSeek.
