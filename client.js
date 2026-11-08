@@ -8,7 +8,7 @@ window.__ModuleLoader__.load({
     const ROUTE_PATH = '/plugins/spendwatch/summary'
     const BALANCE_ROUTE_PATH = '/plugins/spendwatch/balance'
     const PRICING_ROUTE_PATH = '/plugins/spendwatch/pricing'
-    const CLIENT_VERSION = '1.6.0'
+    const CLIENT_VERSION = '1.6.1'
     /** Coalesce same-tick updates (one turn can commit several Sessions' frames together). */
     const PULL_DEBOUNCE_MS = 200
     /** Minimum gap before a queued follow-up pull, so one turn cannot stampede the wallet API. */
@@ -757,6 +757,12 @@ window.__ModuleLoader__.load({
         }, PULL_DEBOUNCE_MS)
       }, [pullBalance])
 
+      // The balance route is independent of the all-session spend fold. Ask
+      // for it on mount so a slow summary cannot hold up the wallet row.
+      React.useEffect(() => {
+        pullBalance()
+      }, [pullBalance])
+
       React.useEffect(() => {
         const state = feed.current
         return () => {
@@ -895,7 +901,7 @@ window.__ModuleLoader__.load({
             pricingDetail,
           ].filter(Boolean).join(' ')
         : details.join(' ')
-      const busy = phase === 'loading'
+      const busy = phase === 'loading' && balanceValue?.status !== 'ready'
 
       const workspaceById = React.useMemo(() => {
         const map = new Map()

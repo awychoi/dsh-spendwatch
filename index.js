@@ -13,7 +13,7 @@ const ROUTE_PATH = '/plugins/spendwatch/summary'
 const BALANCE_ROUTE_PATH = '/plugins/spendwatch/balance'
 const PRICING_ROUTE_PATH = '/plugins/spendwatch/pricing'
 const CACHE_MS = 15_000
-const DEFAULT_CLIENT_VERSION = '1.6.0'
+const DEFAULT_CLIENT_VERSION = '1.6.1'
 const BALANCE_ENDPOINT = 'https://api.deepseek.com/user/balance'
 
 /**
@@ -657,6 +657,7 @@ function accountWallets(balance) {
 async function readBalance(ctx, client) {
   const account = ctx.get('deepseekAccount')
   if (account !== undefined) {
+    let accountFailure
     try {
       const balance = await account.getBalance(client)
       if (balance === null) {
@@ -665,17 +666,23 @@ async function readBalance(ctx, client) {
           ? { status: 'signed-out', source: null }
           : fallback
       }
-      if (balance.status !== 'ready') {
-        return { status: 'failed', source: 'account' }
+      if (balance.status === 'ready') {
+        return {
+          status: 'ready',
+          source: 'account',
+          wallets: accountWallets(balance),
+        }
       }
-      return {
-        status: 'ready',
-        source: 'account',
-        wallets: accountWallets(balance),
-      }
+      accountFailure = { status: 'failed', source: 'account' }
     } catch {
-      return { status: 'failed', source: 'account' }
+      accountFailure = { status: 'failed', source: 'account' }
     }
+    // The Platform balance read can fail independently (for example, a 202
+    // without a body). The API key reads the same wallet through the public
+    // balance endpoint, so try it before reporting the account failure.
+    const fallback = await readApiKeyBalance(ctx)
+    if (fallback.status === 'ready') return fallback
+    return accountFailure
   }
 
   const fallback = await readApiKeyBalance(ctx)

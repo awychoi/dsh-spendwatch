@@ -22,10 +22,11 @@ settings screen.
 ## How it stays current
 
 The balance is re-read when a conversation adds spend, when you return to the
-window, or when you click it. It does not poll while idle. Session totals follow
-the usage each model call reports, and a forked conversation is billed only for
-what it did after the fork. Workspace totals add live sessions on top of the
-durable fold, so archived sessions still count.
+window, or when you click it. It does not poll while idle. The wallet has its
+own route, so the all-session spend fold cannot hold it up. Session totals
+follow the usage each model call reports, and a forked conversation is billed
+only for what it did after the fork. Workspace totals add live sessions on top
+of the durable fold, so archived sessions still count.
 
 The peak / off-peak marker is derived from the same price book the Host uses,
 re-evaluates every 10 seconds, and includes the Beijing weekday rule and Chinese
@@ -68,7 +69,7 @@ Built against DSH 0.2.x; the host-coupling notes below are the parts most likely
 - **Failure isolation:** the sidebar and composer entries each sit behind a
   crash boundary. Missing optional services degrade individually — no
   `sessionQuery` drops spend figures, no `workspaceRegistry` drops workspace
-  badges, and no `deepseekAccount` falls back to `DEEPSEEK_API_KEY`.
+  badges, and a missing or failed `deepseekAccount` falls back to `DEEPSEEK_API_KEY`.
 - **Pricing book:** the Host validates `pricing.json` at startup and serves it
   to the Client, falling back to the bundled copy if the file is malformed or
   missing. To update token rates, search token estimates, or holidays, add a
@@ -81,9 +82,10 @@ Built against DSH 0.2.x; the host-coupling notes below are the parts most likely
    `https://github.com/awychoi/dsh-spendwatch`.
 3. Restart DSH when prompted.
 
-The wallet is read through your signed-in DeepSeek account, or through
-`DEEPSEEK_API_KEY` if you use API keys. The key and account token stay on the
-Host and never reach the browser.
+Spendwatch prefers the signed-in DeepSeek account. If that read fails or the
+account is not connected, it falls back to `DEEPSEEK_API_KEY`, which reads the
+same wallet through the public API. Credentials stay on the Host and never
+reach the browser.
 
 ## Uninstall
 
