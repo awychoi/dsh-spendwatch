@@ -44,6 +44,9 @@ public holidays.
   bill $0.75 per 1K successful requests, but this profile uses Messages search
   and local HTTP fetch, so that fee is not incurred. The search count includes
   requests that later failed.
+- The Platform **Usage** page's total is account-wide: every API key and tool on
+  the account. Spendwatch estimates only the sessions in this DSH instance, so
+  the two totals are not expected to match.
 - Chinese public holidays are covered through 2026; add the 2027 dates when they
   are announced.
 - Do not reconcile an invoice with Spendwatch. DeepSeek's ledger can settle
