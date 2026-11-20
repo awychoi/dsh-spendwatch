@@ -1,3 +1,18 @@
 node_modules/
 .DS_Store
 *.log
+
+# Local secrets and credentials — never commit these
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+id_rsa*
+id_ed25519*
+.netrc
+.npmrc
+credentials*.json
+secrets*.json
