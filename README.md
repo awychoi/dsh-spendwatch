@@ -47,7 +47,10 @@ public holidays.
 - The Platform **Usage** page's total is account-wide: every API key and tool on
   the account. Spendwatch estimates only the sessions in this DSH instance, so
   the two totals are not expected to match.
-- Chinese public holidays are covered through 2026; add the 2027 dates when they
+- Token rates and peak windows match DeepSeek's published pricing page as of
+  2026-11-23: peak is 01:00–04:00 and 06:00–10:00 UTC, Beijing Monday–Friday,
+  excluding Chinese public holidays; off-peak is half.
+- Chinese public holidays are covered through 2027; add the 2028 dates when they
   are announced.
 - Do not reconcile an invoice with Spendwatch. DeepSeek's ledger can settle
   after the fact.
