@@ -49,7 +49,45 @@ const FALLBACK_BOOK = {
   ],
   periods: [
     {
-      from: '1970-01-01T00:00:00.000Z',
+      from: '2026-04-24T00:00:00.000Z',
+      weekdays: 'all',
+      windows: [
+        { start: '01:00', end: '04:00' },
+        { start: '06:00', end: '10:00' },
+      ],
+      rates: {
+        flash: {
+          peak: { cacheHit: 0.028, cacheMiss: 0.14, output: 0.28 },
+          offPeak: { cacheHit: 0.028, cacheMiss: 0.14, output: 0.28 },
+        },
+        pro: {
+          peak: { cacheHit: 0.145, cacheMiss: 1.74, output: 3.48 },
+          offPeak: { cacheHit: 0.145, cacheMiss: 1.74, output: 3.48 },
+        },
+      },
+      search: { estimatedInputTokens: 100, estimatedOutputTokens: 270 },
+    },
+    {
+      from: '2026-08-16T16:00:00.000Z',
+      weekdays: 'all',
+      windows: [
+        { start: '01:00', end: '04:00' },
+        { start: '06:00', end: '10:00' },
+      ],
+      rates: {
+        flash: {
+          peak: { cacheHit: 0.014, cacheMiss: 0.44, output: 1.32 },
+          offPeak: { cacheHit: 0.007, cacheMiss: 0.22, output: 0.66 },
+        },
+        pro: {
+          peak: { cacheHit: 0.044, cacheMiss: 1.32, output: 3.96 },
+          offPeak: { cacheHit: 0.022, cacheMiss: 0.66, output: 1.98 },
+        },
+      },
+      search: { estimatedInputTokens: 100, estimatedOutputTokens: 270 },
+    },
+    {
+      from: '2026-09-10T04:00:00.000Z',
       weekdays: 'beijing',
       windows: [
         { start: '01:00', end: '04:00' },
@@ -65,8 +103,7 @@ const FALLBACK_BOOK = {
           offPeak: { cacheHit: 0.022, cacheMiss: 0.66, output: 1.98 },
         },
       },
-      searchInputTokens: 100,
-      searchOutputTokens: 270,
+      search: { estimatedInputTokens: 100, estimatedOutputTokens: 270 },
     },
   ],
 }

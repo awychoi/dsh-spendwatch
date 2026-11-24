@@ -47,9 +47,9 @@ public holidays.
 - The Platform **Usage** page's total is account-wide: every API key and tool on
   the account. Spendwatch estimates only the sessions in this DSH instance, so
   the two totals are not expected to match.
-- Token rates and peak windows match DeepSeek's published pricing page as of
-  2026-11-23: peak is 01:00–04:00 and 06:00–10:00 UTC, Beijing Monday–Friday,
-  excluding Chinese public holidays; off-peak is half.
+- Current token rates and peak windows match DeepSeek's published pricing page
+  as of 2026-11-23: peak is 01:00–04:00 and 06:00–10:00 UTC, Beijing
+  Monday–Friday, excluding Chinese public holidays; off-peak is half.
 - Chinese public holidays are covered through 2027; add the 2028 dates when they
   are announced.
 - Do not reconcile an invoice with Spendwatch. DeepSeek's ledger can settle
@@ -80,6 +80,11 @@ Built against DSH 0.2.x; the host-coupling notes below are the parts most likely
   to the Client, falling back to the bundled copy if the file is malformed or
   missing. To update token rates, search token estimates, or holidays, add a
   period with its effective `from` instant and restart DSH.
+- **Price history:** `pricing.json` also encodes the 2026 changes — flat V4
+  prices from 2026-04-24, peak/off-peak with peak every day from 2026-08-16
+  16:00 UTC, and V4.1 prices with the Beijing weekday and holiday rule from
+  2026-09-10 04:00 UTC — so archived sessions are priced at the rates in force
+  when they ran.
 
 ## Install
 

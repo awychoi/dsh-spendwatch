@@ -313,7 +313,7 @@ window.__ModuleLoader__.load({
       ],
       periods: [
         {
-          from: '1970-01-01T00:00:00.000Z',
+          from: '2026-04-24T00:00:00.000Z',
           weekdays: 'all',
           windows: [
             { start: '01:00', end: '04:00' },
@@ -321,7 +321,15 @@ window.__ModuleLoader__.load({
           ],
         },
         {
-          from: '2026-08-22T16:00:00.000Z',
+          from: '2026-08-16T16:00:00.000Z',
+          weekdays: 'all',
+          windows: [
+            { start: '01:00', end: '04:00' },
+            { start: '06:00', end: '10:00' },
+          ],
+        },
+        {
+          from: '2026-09-10T04:00:00.000Z',
           weekdays: 'beijing',
           windows: [
             { start: '01:00', end: '04:00' },
